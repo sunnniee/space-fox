@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "lib": ["ESNext"],
+        "types": ["node"],
+        "allowImportingTsExtensions": true,
+        "allowSyntheticDefaultImports": true,
+        "alwaysStrict": true,
+        "noEmit": true,
+        "resolveJsonModule": true
+    },
+    "ts-node": {
+        "transpileOnly": true,
+    },
+    "include": ["./src/**/*"],
+}
