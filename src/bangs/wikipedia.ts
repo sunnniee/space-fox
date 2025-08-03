@@ -113,17 +113,15 @@ registerBang({
 
     execute: async (content, _, ctx, parameter) => {
         const result = await wikipedia(content, (parameter?.length === 2 ? parameter : "en").toLowerCase());
-        if (!result) return {
+        if (result.error) return {
             content: {
                 embeds: [new EmbedBuilder()
                     .setColor(0xffffff)
-                    .setDescription("Couldn't find an entry relating to that")
+                    .setDescription(result.error)
                     .toJSON()]
             },
             link: "https://en.wikipedia.org/wiki/Special:Search?go=Go&search=" + encodeURIComponent(content)
         };
-
-
 
         let { text } = result;
         const { title, link, thumbnail } = result;

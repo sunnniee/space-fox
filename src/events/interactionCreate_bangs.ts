@@ -1,4 +1,4 @@
-import type { AnyTextableChannel, Message } from "oceanic.js";
+import type { AnyTextableChannel, CommandInteraction, Message } from "oceanic.js";
 import { ApplicationCommandTypes, InteractionTypes, MessageFlags } from "oceanic.js";
 
 import { client, inCachedChannel } from "../client.ts";
@@ -17,6 +17,18 @@ function matchBang(content: string): RegExpMatchArray | null {
         [matchOutput[1], matchOutput[2]] = [matchOutput[2], matchOutput[1]];
     }
     return matchOutput;
+}
+
+function handleError(ctx: CommandInteraction, e: any, ephemeralFlag?: number) {
+    if (!process.env.SUPPRESS_WARNINGS) console.log(e);
+    let error = "Unknown error";
+    try {
+        error = e.toString().replace(/https?:\/\/[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()!@:%_+.~#?&//=]*)/g, "[link]");
+    } catch { }
+    ctx.reply({
+        content: `Something went wrong while running that, oop\n\`\`\`${error}\`\`\``,
+        flags: ephemeralFlag
+    }).catch(() => { });
 }
 
 client.on("interactionCreate", async ctx => {
@@ -52,9 +64,9 @@ client.on("interactionCreate", async ctx => {
             else if (!content && bang.ignoreIfBlank)
                 return ctx.reply({ content: "That bang requires some input", flags: MessageFlags.EPHEMERAL });
             else {
+                const ephemeralFlag = ephemeral ? MessageFlags.EPHEMERAL : 0;
                 if (!bang.shortExecute)
-                    // tri-state
-                    ctx.defer(ephemeral === true ? MessageFlags.EPHEMERAL : 0);
+                    ctx.defer(ephemeralFlag);
 
                 bang.execute(content, attachments, context, parameter).then(output => {
                     if (!output?.content)
@@ -68,10 +80,10 @@ client.on("interactionCreate", async ctx => {
                         flags
                     }).then(res => {
                         if (output.afterSend) res.getMessage().then(output.afterSend);
-                    });
+                    }).catch(e => handleError(ctx, e, ephemeralFlag));
 
                     delete bangInputs[ctx.user.id];
-                }).catch(e => { if (!process.env.SUPPRESS_WARNINGS) console.log(e); });
+                }).catch(e => handleError(ctx, e, ephemeralFlag));
             }
         }
     } else if (ctx.type === InteractionTypes.APPLICATION_COMMAND

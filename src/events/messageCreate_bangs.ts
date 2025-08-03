@@ -4,6 +4,17 @@ import { client, inCachedChannel } from "../client.ts";
 import { bangInputs, bangRegex, bangs } from "../globals.ts";
 import { formatAndAddLinkButton, canUseBang } from "../utils/bangs.ts";
 
+function handleError(msg: Message, e: any) {
+    if (!process.env.SUPPRESS_WARNINGS) console.log(e);
+    let error = "Unknown error";
+    try {
+        error = e.toString().replace(/https?:\/\/[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()!@:%_+.~#?&//=]*)/g, "[link]");
+    } catch { }
+    client.respond(msg, {
+        content: `Something went wrong while running that, oop\n\`\`\`${error}\`\`\``
+    }).catch(() => { });
+}
+
 client.on("messageCreate", async msg => {
     if (msg.author.bot) return;
     if (!inCachedChannel(msg)) return;
@@ -43,10 +54,11 @@ client.on("messageCreate", async msg => {
                 client.respond(msg, formatAndAddLinkButton(response, bang.title, link))
                     .then(msg => {
                         if (msg && output.afterSend) output.afterSend(msg);
-                    });
+                    })
+                    .catch(e => handleError(msg, e));
 
                 delete bangInputs[msg.author.id];
-            }).catch(e => { if (!process.env.SUPPRESS_WARNINGS) console.log(e); });
+            }).catch(e => handleError(msg, e));
         }
     }
 });
