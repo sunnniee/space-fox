@@ -52,7 +52,7 @@ const allSegments: Record<string, {
     at: number;
 }> = {};
 
-purgeOldValues(allSegments, 600_000, obj => {
+purgeOldValues(allSegments, 480_000, obj => {
     const msg = obj.message;
     if (msg) {
         client.editMessage(msg, {
