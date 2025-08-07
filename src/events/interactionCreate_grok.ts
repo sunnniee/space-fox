@@ -37,5 +37,5 @@ You must always reply with a conclusion of true or false, even if it does not ha
         embeds: []
     };
     msg.embeds.push(new EmbedBuilder().setFooter("AI-generated response").toJSON());
-    ctx.reply(msg);
+    ctx.reply(msg).catch(() => { });
 });

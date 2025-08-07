@@ -81,7 +81,7 @@ function parseDate(date: string): number | void {
 
 const genUid = (n = 6) => Math.floor(Math.random() * 16 ** n).toString(16).padStart(n, "0");
 
-function addReminder(duration: number, content: string, ctx: CommandInteraction | ModalSubmitInteraction): boolean {
+function addReminder(duration: number, content: string, ctx: CommandInteraction | ModalSubmitInteraction, ephemeral = false): boolean {
     const currentReminders = [...reminders.get(ctx.user.id) || []];
     if (currentReminders.length >= 10) return false;
     let uid: string;
@@ -96,7 +96,7 @@ function addReminder(duration: number, content: string, ctx: CommandInteraction 
         duration,
         content
     };
-    if (client.guilds.has(ctx.guildID)) {
+    if (client.guilds.has(ctx.guildID) && !ephemeral) {
         reminder.channelID = ctx.channelID;
         reminder.guildID = ctx.guildID;
     }
@@ -129,6 +129,12 @@ client.on("interactionCreate", async ctx => {
                     maxLength: 1000,
                     required: false
                 })
+                .addTextInput({
+                    label: "Hide from others? (type anything)",
+                    customID: "ephemeral",
+                    style: TextInputStyles.SHORT,
+                    required: false
+                })
                 .toJSON()
         });
 
@@ -138,6 +144,7 @@ client.on("interactionCreate", async ctx => {
         const durString = ctx.data.components.getTextInput("duration", true);
         const duration = parseDate(durString);
         const note = ctx.data.components.getTextInput("note");
+        const ephemeral = !!ctx.data.components.getTextInput("ephemeral");
         if (!duration) return ctx.reply({
             content: "Failed to parse date",
             flags: MessageFlags.EPHEMERAL
@@ -146,9 +153,10 @@ client.on("interactionCreate", async ctx => {
         const messageID = ctx.data.customID.split("-").at(-1);
         const content = `https://discord.com/channels/${ctx.guildID}/${ctx.channelID}/${messageID} ` + note;
 
-        const success = addReminder(duration, content, ctx);
+        const success = addReminder(duration, content, ctx, ephemeral);
         if (success) ctx.reply({
-            content: `<t:${Math.floor(Date.now() / 1000 + duration) + 2}:R>: ${content}`
+            content: `<t:${Math.floor(Date.now() / 1000 + duration) + 2}:R>: ${content}`,
+            flags: ephemeral ? MessageFlags.EPHEMERAL : 0
         });
         else ctx.reply({
             content: "Failed to add reminder. This is most likely because you already have too many reminders.",
@@ -162,14 +170,16 @@ client.on("interactionCreate", async ctx => {
         const durString = ctx.data.options.getString("duration", true);
         const duration = parseDate(durString);
         const content = ctx.data.options.getString("content", true).slice(0, 1000);
+        const ephemeral = ctx.data.options.getBoolean("ephemeral");
         if (!duration) return ctx.reply({
             content: "Failed to parse date",
             flags: MessageFlags.EPHEMERAL
         });
 
-        const success = addReminder(duration, content, ctx);
+        const success = addReminder(duration, content, ctx, ephemeral);
         if (success) ctx.reply({
-            content: `<t:${Math.floor(Date.now() / 1000 + duration) + 2}:R>: ${content}`
+            content: `<t:${Math.floor(Date.now() / 1000 + duration) + 2}:R>: ${content}`,
+            flags: ephemeral ? MessageFlags.EPHEMERAL : 0
         });
         else ctx.reply({
             content: "Failed to add reminder. This is most likely because you already have too many reminders.",
@@ -184,11 +194,16 @@ client.on("interactionCreate", async ctx => {
         if (subcommand && subcommand[0] === "list") {
             const reminderList = reminders.get(ctx.user.id) || [];
 
+            let content = reminderList.map(r => `\`${r.uid}\` (<t:${Math.floor(r.at / 1000)}:R>): ${r.content}`).join("\n");
+            if (content.length >= 4096) {
+                content = reminderList.map(r => `\`${r.uid}\` (<t:${Math.floor(r.at / 1000)}:R>)`).join("\n");
+            }
+
             return ctx.reply({
                 embeds: [new EmbedBuilder()
                     .setAuthor("Your reminders")
                     .setColor(0x89b4fa)
-                    .setDescription(reminderList.map(r => `\`${r.uid}\` (<t:${Math.floor(r.at / 1000)}:R>): ${r.content}`).join("\n")
+                    .setDescription(content
                         || "You don't have any reminders - set one with `/remindme`")
                     .toJSON()]
             });

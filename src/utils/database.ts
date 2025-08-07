@@ -1,3 +1,4 @@
+import { readFileSync } from "fs";
 import { readFile, writeFile as _writeFile } from "fs/promises";
 import path from "path";
 
@@ -41,6 +42,10 @@ export class JSONDatabase<Schema> {
             }
         });
     };
+
+    private refresh() {
+        this.cache = JSON.parse(readFileSync(this.filePath, "utf8"));
+    }
 
     get(id: string): Readonly<Schema | void> {
         return this.cache[id];
