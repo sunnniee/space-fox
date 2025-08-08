@@ -5,6 +5,7 @@
     "main": "dist/index.js",
     "scripts": {
         "lint": "eslint . --ext .ts",
+        "registerCommands": "node --disable-warning=ExperimentalWarning --experimental-transform-types src/registerCommands.ts",
         "start": "nodemon --ext ts -x \"node --disable-warning=ExperimentalWarning --experimental-transform-types src/index.ts\"",
         "start:restart": "nodemon --ext ts -x \"node --disable-warning=ExperimentalWarning --experimental-transform-types src/index.ts || touch src/index.ts\""
     },

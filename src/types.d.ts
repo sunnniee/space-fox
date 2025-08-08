@@ -1,5 +1,5 @@
 import { AnyInteractionChannel, AnyTextableChannel, Attachment, CommandInteraction, CreateMessageOptions, Message, User } from "oceanic.js";
-import type { ComponentInteraction, Uncached } from "oceanic.js";
+import type { ApplicationCommandOptionsWithValue, ApplicationCommandOptionTypes, ApplicationCommandTypes, AutocompleteInteraction, ComponentInteraction, CreateApplicationCommandOptions, ModalSubmitInteraction, Uncached } from "oceanic.js";
 import type { PermissionTier } from "./permissions.ts";
 
 export type BangResult = {
@@ -12,7 +12,7 @@ export type Context = Message<AnyTextableChannel | Uncached> | (CommandInteracti
 
 export type ComponentHandler = {
     match: RegExp;
-    handle: (ctx: ComponentInteraction) => Promise<any>;
+    handle: (ctx: ComponentInteraction | ModalSubmitInteraction) => Promise<any>;
 };
 
 export type Bang = {
@@ -68,3 +68,49 @@ export type RemindersItem = {
     guildID?: string;
     channelID?: string;
 }[];
+
+export type OptionTypeMapping = {
+    [ApplicationCommandOptionTypes.STRING]: string;
+    [ApplicationCommandOptionTypes.INTEGER]: number;
+    [ApplicationCommandOptionTypes.NUMBER]: number;
+    [ApplicationCommandOptionTypes.BOOLEAN]: boolean;
+};
+
+/* eslint-disable stylistic/indent */
+export type OptionsToArgs<T extends readonly ApplicationCommandOptionsWithValue[]> = {
+    [K in keyof T]: T[K] extends ApplicationCommandOptionsWithValue
+    ? T[K]["type"] extends keyof OptionTypeMapping
+    ? T[K]["required"] extends false
+    ? OptionTypeMapping[T[K]["type"]] | undefined
+    : OptionTypeMapping[T[K]["type"]]
+    : never
+    : never
+};
+/* eslint-enable stylistic/indent */
+
+export interface ChatInputCommand<T extends readonly ApplicationCommandOptionsWithValue[]> {
+    name: string;
+    type: typeof ApplicationCommandTypes.CHAT_INPUT;
+    description: string;
+    globalDescription?: string;
+    options?: T;
+    execute: (ctx: CommandInteraction<AnyInteractionChannel | Uncached>, ...args: OptionsToArgs<T>) => Promise<any>;
+    componentHandlers?: ComponentHandler[];
+    autocomplete?: (ctx: AutocompleteInteraction<AnyInteractionChannel | Uncached>, ...args: Partial<OptionsToArgs<T>>) => Promise<any>;
+}
+
+export interface ContextMenuCommand {
+    name: string;
+    type: typeof ApplicationCommandTypes.USER | typeof ApplicationCommandTypes.MESSAGE;
+    execute: (ctx: CommandInteraction<AnyInteractionChannel | Uncached>) => Promise<any>;
+    componentHandlers?: ComponentHandler[];
+}
+
+export type Command<T extends readonly ApplicationCommandOptionsWithValue[]> = ChatInputCommand<T> | ContextMenuCommand;
+
+export type ExecuteFn = (...args: any[]) => Promise<any>;
+export type CommandList = (CreateApplicationCommandOptions & {
+    execute: ExecuteFn | Record<string, ExecuteFn>;
+    componentHandlers: ComponentHandler[];
+    autocomplete?: ExecuteFn | Record<string, ExecuteFn>;
+})[];

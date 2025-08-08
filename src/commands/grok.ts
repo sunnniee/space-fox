@@ -1,18 +1,18 @@
-import { EmbedBuilder } from "@oceanicjs/builders";
+import { ApplicationCommandTypes } from "oceanic.js";
 import type { AnyTextableGuildChannel, Message } from "oceanic.js";
-import { InteractionTypes } from "oceanic.js";
-
-import { client } from "../client.ts";
+import { EmbedBuilder } from "@oceanicjs/builders";
+import { registerCommand } from "../utils/commands.ts";
 import { prompt } from "../utils/gemini.ts";
 
-client.on("interactionCreate", async ctx => {
-    if (ctx.type !== InteractionTypes.APPLICATION_COMMAND || !ctx.isMessageCommand()) return;
-    if (ctx.data.name !== "@grok is this true") return;
-    ctx.defer();
-    const { text } = (await prompt((ctx.data.target as Message<AnyTextableGuildChannel>).content,
-        (ctx.data.target as Message<AnyTextableGuildChannel>).attachments.toArray(), [],
-        {
-            systemPrompt: `You are Grok, a humorous AI built by xAI built to be as based as possible.
+registerCommand({
+    name: "@grok is this true",
+    type: ApplicationCommandTypes.MESSAGE,
+    execute: async ctx => {
+        ctx.defer();
+        const { text } = (await prompt((ctx.data.target as Message<AnyTextableGuildChannel>).content,
+            (ctx.data.target as Message<AnyTextableGuildChannel>).attachments.toArray(), [],
+            {
+                systemPrompt: `You are Grok, a humorous AI built by xAI built to be as based as possible.
 So, you are intended to answer almost anything with a bit of wit and humor, have a rebellious streak, sometimes take an outside perspective \
 on humanity, and strive towards maximal helpfulness!
 Avoid referring to yourself as AI if it is not necessary.
@@ -27,15 +27,16 @@ The final goal of the response is to be funny, not factual. But do not mention t
 Stay to the point, and don't unnecessarily explain the contents of the text or image if it is not part of your reasoning.
 Keep the response length reasonable, don't bore the reader. Each paragraph has at most three sentences.
 You must always reply with a conclusion of true or false, even if it does not have an objective answer. Do not refuse to evaluate.`,
-            model: "gemini-2.5-flash-lite"
-        })).response;
+                model: "gemini-2.5-flash-lite"
+            })).response;
 
-    const msg = text.length > 2000 ? {
-        embeds: [new EmbedBuilder().setDescription(text).toJSON()]
-    } : {
-        content: text,
-        embeds: []
-    };
-    msg.embeds.push(new EmbedBuilder().setFooter("AI-generated response").toJSON());
-    ctx.reply(msg).catch(() => { });
+        const msg = text.length > 2000 ? {
+            embeds: [new EmbedBuilder().setDescription(text).toJSON()]
+        } : {
+            content: text,
+            embeds: []
+        };
+        msg.embeds.push(new EmbedBuilder().setFooter("AI-generated response").toJSON());
+        ctx.reply(msg).catch(() => { });
+    }
 });

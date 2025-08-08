@@ -1,9 +1,10 @@
 import type { AnyTextableChannel, Message } from "oceanic.js";
 
-import type { Bang, ComponentHandler, PromptHistoryItem } from "./types.d.ts";
+import type { Bang, CommandList, ComponentHandler, PromptHistoryItem } from "./types.d.ts";
 
 export const bangRegex = /(?:(.*)\s|^)!([\w-]+)$/si;
 
+export const commands = [] as CommandList;
 export const bangs: Record<string, Bang> = {};
 export const allComponentHandlers: ComponentHandler[] = [];
 

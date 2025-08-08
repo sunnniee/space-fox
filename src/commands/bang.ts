@@ -1,10 +1,9 @@
+import type { Context } from "vm";
+import { ApplicationCommandOptionTypes, ApplicationCommandTypes, MessageFlags } from "oceanic.js";
 import type { AnyTextableChannel, CommandInteraction, Message } from "oceanic.js";
-import { ApplicationCommandTypes, InteractionTypes, MessageFlags } from "oceanic.js";
-
-import { client, inCachedChannel } from "../client.ts";
-import { bangInputs, bangRegex, bangs, allComponentHandlers } from "../globals.ts";
+import { registerCommand } from "../utils/commands.ts";
+import { bangRegex, bangs, bangInputs } from "../globals.ts";
 import { bangsByTitle, canUseBang, formatAndAddLinkButton, getBangExamples } from "../utils/bangs.ts";
-import type { Context } from "../types.js";
 
 const errorMsg = "Couldn't find that bang or no bang specified";
 const bangAtStartRegex = /^!([\w-]+)\s?(.*)/si;
@@ -31,79 +30,24 @@ function handleError(ctx: CommandInteraction, e: any, ephemeralFlag?: number) {
     }).catch(() => { });
 }
 
-client.on("interactionCreate", async ctx => {
-    if (ctx.type === InteractionTypes.APPLICATION_COMMAND
-        && ctx.data.type === ApplicationCommandTypes.CHAT_INPUT
-        && ctx.data.name === "bang") {
-        const content = ctx.data.options.getString("content", true);
-        const ephemeral = ctx.data.options.getBoolean("ephemeral");
-        const matchOutput = matchBang(content);
-        if (!matchOutput)
-            return ctx.reply({ content: errorMsg, flags: MessageFlags.EPHEMERAL });
+registerCommand({
+    name: "bang",
+    type: ApplicationCommandTypes.CHAT_INPUT,
+    description: "Run a bang (use !h for a list of bangs)",
+    options: [{
+        name: "content",
+        description: "Content of the bang",
+        type: ApplicationCommandOptionTypes.STRING,
+        required: true,
+        autocomplete: true
+    }, {
+        name: "ephemeral",
+        description: "Send the response only to yourself",
+        type: ApplicationCommandOptionTypes.BOOLEAN,
+        required: false
+    }],
 
-        const input = bangInputs[ctx.user.id];
-        const context = input?.message || Object.assign(ctx, { author: ctx.user }) satisfies Context;
-        const attachments = input ? input.message.attachments.toArray() : [];
-
-        if (matchOutput) {
-            const [, origContent, bangUsed] = matchOutput;
-            const [bangName, ...parameters] = bangUsed.split("-");
-            if (parameters.length > 1)
-                return ctx.reply({ content: errorMsg, flags: MessageFlags.EPHEMERAL });
-
-            const parameter = parameters[0];
-            let content = origContent ?? "";
-            if (input)
-                content = (input.message.content + "\n\n" + content).trim();
-
-            const bang = bangs[bangName];
-            if (!bang)
-                return ctx.reply({ content: errorMsg, flags: MessageFlags.EPHEMERAL });
-            else if (!canUseBang(bang.names[0], ctx.user, ctx.guildPartial))
-                return ctx.reply({ content: errorMsg, flags: MessageFlags.EPHEMERAL });
-            else if (!content && bang.ignoreIfBlank)
-                return ctx.reply({ content: "That bang requires some input", flags: MessageFlags.EPHEMERAL });
-            else {
-                const ephemeralFlag = ephemeral ? MessageFlags.EPHEMERAL : 0;
-                if (!bang.shortExecute)
-                    ctx.defer(ephemeralFlag);
-
-                bang.execute(content, attachments, context, parameter).then(output => {
-                    if (!output?.content)
-                        return ctx.reply({ content: "Got no response, this is probably a bug", flags: MessageFlags.EPHEMERAL });
-                    const response = output.content, { link } = output;
-                    let flags = typeof response === "string" ? 0 : response.flags;
-                    if (ephemeral) flags |= MessageFlags.EPHEMERAL;
-
-                    ctx.reply({
-                        ...formatAndAddLinkButton(response, bang.title, link),
-                        flags
-                    }).then(res => {
-                        if (output.afterSend) res.getMessage().then(output.afterSend);
-                    }).catch(e => handleError(ctx, e, ephemeralFlag));
-
-                    delete bangInputs[ctx.user.id];
-                }).catch(e => handleError(ctx, e, ephemeralFlag));
-            }
-        }
-    } else if (ctx.type === InteractionTypes.APPLICATION_COMMAND
-        && ctx.isMessageCommand()
-        && ctx.data.name === "Use as bang input"
-        && inCachedChannel(ctx)) {
-        bangInputs[ctx.user.id] = {
-            message: ctx.data.target as Message<AnyTextableChannel>,
-            at: Date.now()
-        };
-
-        ctx.reply({
-            content: "👍",
-            flags: MessageFlags.EPHEMERAL
-        });
-
-    } else if (ctx.type === InteractionTypes.APPLICATION_COMMAND_AUTOCOMPLETE
-        && ctx.data.type === ApplicationCommandTypes.CHAT_INPUT
-        && ctx.data.name === "bang") {
-        let content = ctx.data.options.getString("content");
+    autocomplete: async (ctx, content) => {
         if (!content) return ctx.result(getBangExamples());
 
         const validBang = matchBang(content);
@@ -196,10 +140,73 @@ client.on("interactionCreate", async ctx => {
             return ctx.result(choices.slice(0, 8));
 
         }
-    } else if (ctx.type === InteractionTypes.MESSAGE_COMPONENT) {
-        allComponentHandlers.forEach(handler => {
-            if (handler.match.test(ctx.data.customID))
-                return handler.handle(ctx);
+    },
+
+    execute: async (ctx, content, ephemeral) => {
+        const matchOutput = matchBang(content);
+        if (!matchOutput)
+            return ctx.reply({ content: errorMsg, flags: MessageFlags.EPHEMERAL });
+
+        const input = bangInputs[ctx.user.id];
+        const context = input?.message || Object.assign(ctx, { author: ctx.user }) satisfies Context;
+        const attachments = input ? input.message.attachments.toArray() : [];
+
+        if (matchOutput) {
+            const [, origContent, bangUsed] = matchOutput;
+            const [bangName, ...parameters] = bangUsed.split("-");
+            if (parameters.length > 1)
+                return ctx.reply({ content: errorMsg, flags: MessageFlags.EPHEMERAL });
+
+            const parameter = parameters[0];
+            let content = origContent ?? "";
+            if (input)
+                content = (input.message.content + "\n\n" + content).trim();
+
+            const bang = bangs[bangName];
+            if (!bang)
+                return ctx.reply({ content: errorMsg, flags: MessageFlags.EPHEMERAL });
+            else if (!canUseBang(bang.names[0], ctx.user, ctx.guildPartial))
+                return ctx.reply({ content: errorMsg, flags: MessageFlags.EPHEMERAL });
+            else if (!content && bang.ignoreIfBlank)
+                return ctx.reply({ content: "That bang requires some input", flags: MessageFlags.EPHEMERAL });
+            else {
+                const ephemeralFlag = ephemeral ? MessageFlags.EPHEMERAL : 0;
+                if (!bang.shortExecute)
+                    ctx.defer(ephemeralFlag);
+
+                bang.execute(content, attachments, context, parameter).then(output => {
+                    if (!output?.content)
+                        return ctx.reply({ content: "Got no response, this is probably a bug", flags: MessageFlags.EPHEMERAL });
+                    const response = output.content, { link } = output;
+                    let flags = typeof response === "string" ? 0 : response.flags;
+                    if (ephemeral) flags |= MessageFlags.EPHEMERAL;
+
+                    ctx.reply({
+                        ...formatAndAddLinkButton(response, bang.title, link),
+                        flags
+                    }).then(res => {
+                        if (output.afterSend) res.getMessage().then(output.afterSend);
+                    }).catch(e => handleError(ctx, e, ephemeralFlag));
+
+                    delete bangInputs[ctx.user.id];
+                }).catch(e => handleError(ctx, e, ephemeralFlag));
+            }
+        }
+    }
+});
+
+registerCommand({
+    name: "Use as bang input",
+    type: ApplicationCommandTypes.MESSAGE,
+    execute: async ctx => {
+        bangInputs[ctx.user.id] = {
+            message: ctx.data.target as Message<AnyTextableChannel>,
+            at: Date.now()
+        };
+
+        ctx.reply({
+            content: "👍",
+            flags: MessageFlags.EPHEMERAL
         });
     }
 });
