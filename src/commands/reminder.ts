@@ -2,9 +2,9 @@ import { ApplicationCommandOptionTypes, ApplicationCommandTypes, MessageFlags, T
 import type { CommandInteraction, ModalActionRow, ModalSubmitInteraction } from "oceanic.js";
 import { ComponentBuilder, EmbedBuilder } from "@oceanicjs/builders";
 import { client } from "../client.ts";
-import type { RemindersItem } from "../types.js";
+import type { ModalComponentHandler, RemindersItem } from "../types.js";
 import { reminders } from "../utils/reminders.ts";
-import { isModalInteraction, registerCommand } from "../utils/commands.ts";
+import { registerCommand } from "../utils/commands.ts";
 
 function parseDate(date: string): number | void {
     const parts = date.match(/(\d+|\D+)/g);
@@ -178,14 +178,10 @@ registerCommand({
     },
     componentHandlers: [{
         match: /^reminder-modal-/,
-        handle: async ctx => {
-            // TODO: pretty handling for modals
-            if (!isModalInteraction(ctx)) return;
-
-            const durString = ctx.data.components.getTextInput("duration", true);
+        modal: true,
+        handle: async (ctx, durString, note, eph) => {
+            const ephemeral = !!eph;
             const duration = parseDate(durString);
-            const note = ctx.data.components.getTextInput("note");
-            const ephemeral = !!ctx.data.components.getTextInput("ephemeral");
             if (!duration) return ctx.reply({
                 content: "Failed to parse date",
                 flags: MessageFlags.EPHEMERAL
@@ -204,7 +200,7 @@ registerCommand({
                 flags: MessageFlags.EPHEMERAL
             });
         }
-    }]
+    } satisfies ModalComponentHandler]
 });
 
 registerCommand({
@@ -244,7 +240,7 @@ registerCommand({
     }],
     execute: async (ctx, id) => {
         const reminderList = reminders.get(ctx.user.id) || [];
-        const newReminderList = reminderList.filter(r => r.uid !== id);
+        const newReminderList = reminderList.filter(r => r.uid !== id.trim());
 
         if (reminderList.length === newReminderList.length) {
             return ctx.reply({

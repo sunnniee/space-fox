@@ -10,10 +10,16 @@ export type BangResult = {
 
 export type Context = Message<AnyTextableChannel | Uncached> | (CommandInteraction<AnyInteractionChannel | Uncached> & { author: User });
 
-export type ComponentHandler = {
+export type MessageComponentHandler = {
     match: RegExp;
-    handle: (ctx: ComponentInteraction | ModalSubmitInteraction) => Promise<any>;
+    handle: (ctx: ComponentInteraction) => Promise<any>;
 };
+export type ModalComponentHandler = {
+    match: RegExp;
+    modal: true;
+    handle: (ctx: ModalSubmitInteraction, ...input: string[]) => Promise<any>;
+};
+export type ComponentHandler = MessageComponentHandler | ModalComponentHandler;
 
 export type Bang = {
     title: string;

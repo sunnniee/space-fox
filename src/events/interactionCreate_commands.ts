@@ -1,32 +1,52 @@
-import { InteractionTypes } from "oceanic.js";
 import { client } from "../client.ts";
 import { allComponentHandlers, commands } from "../globals.ts";
+import type { ComponentHandler, ModalComponentHandler } from "../types.js";
+
+function isModalHandler(handler: ComponentHandler): handler is ModalComponentHandler {
+    return "modal" in handler;
+}
 
 client.on("interactionCreate", async ctx => {
-    if (ctx.type === InteractionTypes.APPLICATION_COMMAND) {
+    if (ctx.isCommandInteraction()) {
+        commands.forEach(cmd => {
+            if (cmd.type === ctx.data.type && cmd.name === ctx.data.name) {
+                const subcommand = ctx.data.options.getSubCommand()?.[0];
+                // TODO: make typescript happy properly
+                const input = ctx.data.options.raw.flatMap((v: any) => {
+                    if (subcommand) return v.options.map(o => o.value);
+                    else return v.value;
+                });
+
+                if (subcommand)
+                    return cmd.execute[subcommand](ctx, ...input);
+                // @ts-expect-error only an object if the command has subcommands
+                else return cmd.execute(ctx, ...input);
+            }
+        });
+    } else if (ctx.isAutocompleteInteraction()) {
         commands.forEach(cmd => {
             if (cmd.type === ctx.data.type && cmd.name === ctx.data.name) {
                 const subcommand = ctx.data.options.getSubCommand();
+                const input = ctx.data.options.raw.flatMap((v: any) => {
+                    if (subcommand) return v.options.map(o => o.value);
+                    else return v.value;
+                });
+
                 if (subcommand?.[0])
-                    return cmd.execute[subcommand[0]](ctx, ...ctx.data.options.raw);
+                    return cmd.autocomplete[subcommand[0]](ctx, ...input);
                 // @ts-expect-error only an object if the command has subcommands
-                else return cmd.execute(ctx, ...ctx.data.options.raw.map(v => v.value));
+                else return cmd.autocomplete(ctx, ...input);
             }
         });
-    } else if (ctx.type === InteractionTypes.APPLICATION_COMMAND_AUTOCOMPLETE) {
-        commands.forEach(cmd => {
-            if (cmd.type === ctx.data.type && cmd.name === ctx.data.name) {
-                const subcommand = ctx.data.options.getSubCommand();
-                if (subcommand?.[0])
-                    return cmd.autocomplete[subcommand[0]](ctx, ...ctx.data.options.raw);
-                // @ts-expect-error only an object if the command has subcommands
-                else return cmd.autocomplete(ctx, ...ctx.data.options.raw.map(v => v.value));
-            }
-        });
-    } else if (ctx.type === InteractionTypes.MESSAGE_COMPONENT || ctx.type === InteractionTypes.MODAL_SUBMIT) {
+    } else if (ctx.isComponentInteraction() || ctx.isModalSubmitInteraction()) {
         allComponentHandlers.forEach(handler => {
-            if (handler.match.test(ctx.data.customID))
-                return handler.handle(ctx);
+            if (handler.match.test(ctx.data.customID)) {
+                if (isModalHandler(handler) && ctx.isModalSubmitInteraction())
+                    return handler.handle(ctx, ...ctx.data.components.raw.flatMap(v => v.components.map(c => c.value)));
+                // god typescript is dumb
+                else if (!isModalHandler(handler) && ctx.isComponentInteraction())
+                    return handler.handle(ctx);
+            }
         });
     }
 });

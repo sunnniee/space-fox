@@ -16,6 +16,7 @@ client.on("ready", () => {
             const cmd = { ...c };
             delete cmd.execute;
             delete cmd.componentHandlers;
+            delete cmd.autocomplete;
             return cmd;
         }));
         process.exit(0);

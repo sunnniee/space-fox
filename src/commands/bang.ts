@@ -22,7 +22,9 @@ function handleError(ctx: CommandInteraction, e: any, ephemeralFlag?: number) {
     if (!process.env.SUPPRESS_WARNINGS) console.log(e);
     let error = "Unknown error";
     try {
-        error = e.toString().replace(/https?:\/\/[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()!@:%_+.~#?&//=]*)/g, "[link]");
+        error = e.toString()
+            .replace(/https?:\/\/[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()!@:%_+.~#?&//=]*)/g, "[link]")
+            .replace(/\/webhooks\/\d+\/\w+/g, "/[redacted]");
     } catch { }
     ctx.reply({
         content: `Something went wrong while running that, oop\n\`\`\`${error}\`\`\``,

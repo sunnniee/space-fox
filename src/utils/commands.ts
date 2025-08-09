@@ -1,9 +1,9 @@
 import { ApplicationCommandOptionTypes, ApplicationCommandTypes, ApplicationIntegrationTypes, InteractionContextTypes } from "oceanic.js";
 import type {
     ApplicationCommandOptionsWithOptions, ApplicationCommandOptionsWithValue,
-    ComponentInteraction, CreateApplicationCommandOptions, CreateChatInputApplicationCommandOptions, ModalSubmitInteraction
+    CreateApplicationCommandOptions, CreateChatInputApplicationCommandOptions
 } from "oceanic.js";
-import { commands } from "../globals.ts";
+import { allComponentHandlers, commands } from "../globals.ts";
 import type { ChatInputCommand, Command } from "../types.js";
 
 function isChatInputCommand(command: CreateApplicationCommandOptions): command is CreateChatInputApplicationCommandOptions;
@@ -45,25 +45,26 @@ export function registerCommand<const T extends ApplicationCommandOptionsWithVal
         if (typeof existing.execute === "function") existing.execute = {
             [existing.options[0].name]: existing.execute
         };
-        existing.execute[cmd.name] = command.execute;
+        existing.execute[cmd.options[0].name] = command.execute;
 
         if (command.autocomplete) {
             if (typeof existing.autocomplete === "function") existing.autocomplete = {
                 [existing.options[0].name]: existing.autocomplete
             };
-            existing.autocomplete[cmd.name] = command.autocomplete;
+            existing.autocomplete[cmd.options[0].name] = command.autocomplete;
         }
 
-        if (command.componentHandlers) existing.componentHandlers.push(...command.componentHandlers);
+        if (command.componentHandlers) {
+            existing.componentHandlers.push(...command.componentHandlers);
+            allComponentHandlers.push(...command.componentHandlers);
+        }
         commands.splice(existingIndex, 1, existing);
     } else {
         commands.push(Object.assign(cmd, {
             execute: command.execute,
             componentHandlers: command.componentHandlers || []
         }));
-    }
-}
+        if (command.componentHandlers) allComponentHandlers.push(...command.componentHandlers);
 
-export function isModalInteraction(ctx: ComponentInteraction | ModalSubmitInteraction): ctx is ModalSubmitInteraction {
-    return "components" in ctx.data;
+    }
 }
