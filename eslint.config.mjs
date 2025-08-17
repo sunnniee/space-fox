@@ -73,7 +73,6 @@ export default defineConfig([globalIgnores(["**/dist"]), {
         "import/no-empty-named-blocks": "error",
         "import/no-mutable-exports": "error",
         "import/no-self-import": "error",
-        "import/no-unassigned-import": "error",
         "import/no-unresolved": ["error"],
         "import/no-unused-modules": "error",
         "import/order": "error",

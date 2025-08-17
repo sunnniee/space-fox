@@ -1,25 +1,48 @@
-import groups from "../permissions.json" with { type: "json" };
+import { readFileSync, writeFileSync } from "fs";
+
 export enum PermissionTier {
     ME = "me",
     FRIENDS = "friends",
     EVERYONE = "everyone"
 }
-
 type PermissionGroupItem = { users?: string[]; guilds?: string[] };
 type PermissionGroups = Record<PermissionTier, PermissionGroupItem>;
-groups satisfies PermissionGroups;
-/*
-{
-    "me": {
-        "users": ["1234"]
+
+const groups: PermissionGroups = {
+    me: {
+        users: [""],
+        guilds: [""]
     },
-    "friends": {
-        "users": ["1234"],
-        "guilds": ["5678"]
+    friends: {
+        users: [""],
+        guilds: [""]
     },
-    "everyone": { leave empty }
+    everyone: {}
+};
+
+let exists = false;
+try {
+    const file = readFileSync("./permissions.json", "utf8");
+    exists = true;
+    const permissions = JSON.parse(file);
+    if (!["me", "friends"].every(p => typeof permissions[p] === "object" || typeof permissions[p] === "undefined"))
+        throw "oopsie daisy";
+    groups.me = permissions.me;
+    groups.friends = permissions.friends;
+    groups.everyone = {};
+} catch {
+    if (!exists) writeFileSync("./permissions.json", JSON.stringify({
+        me: {
+            users: [""],
+            guilds: [""]
+        },
+        friends: {
+            users: [""],
+            guilds: [""]
+        }
+    }, null, 4));
+    else console.error("Failed to parse permissions.json file");
 }
-*/
 
 export function getPermissionTier(user: { id: string } | string, guild?: { id: string } | string): PermissionTier {
     if (typeof user === "object") user = user.id;

@@ -40,7 +40,7 @@ export class JSONDatabase<Schema> {
                 this.writeQueued = false;
                 this.write();
             }
-        });
+        }).catch(() => this.writing = false);
     };
 
     private refresh() {

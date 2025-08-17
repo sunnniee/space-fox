@@ -3,6 +3,8 @@ import { readdir } from "fs";
 
 import { client } from "./client.ts";
 import { checkReminders } from "./utils/reminders.ts";
+// so it is run instantly
+import "./permissions.ts";
 
 let init = false;
 
