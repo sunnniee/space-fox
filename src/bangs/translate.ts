@@ -114,7 +114,7 @@ registerBang({
                 type: ComponentTypes.ACTION_ROW,
                 components: (row as MessageActionRow).components.map(c =>
                     c.type === ComponentTypes.BUTTON && c.style !== ButtonStyles.PREMIUM
-                        ? c.style === ButtonStyles.LINK ? c : { ...c, disabled: true }
+                        ? c.style === ButtonStyles.LINK ? c : { ...c, disabled: true, emoji: c.emoji?.id ? null : c.emoji }
                         : null
                 ).filter(v => v)
             }))

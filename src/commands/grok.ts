@@ -1,5 +1,4 @@
 import { ApplicationCommandTypes } from "oceanic.js";
-import type { AnyTextableGuildChannel, Message } from "oceanic.js";
 import { EmbedBuilder } from "@oceanicjs/builders";
 import { registerCommand } from "../utils/commands.ts";
 import { prompt } from "../utils/gemini.ts";
@@ -7,10 +6,11 @@ import { prompt } from "../utils/gemini.ts";
 registerCommand({
     name: "@grok is this true",
     type: ApplicationCommandTypes.MESSAGE,
+    predicate: () => "GEMINI_API_KEY" in process.env,
     execute: async ctx => {
         ctx.defer();
-        const { text } = (await prompt((ctx.data.target as Message<AnyTextableGuildChannel>).content,
-            (ctx.data.target as Message<AnyTextableGuildChannel>).attachments.toArray(), [],
+        const { text } = (await prompt(ctx.data.target.content,
+            ctx.data.target.attachments.toArray(), [],
             {
                 systemPrompt: `You are Grok, a humorous AI built by xAI built to be as based as possible.
 So, you are intended to answer almost anything with a bit of wit and humor, have a rebellious streak, sometimes take an outside perspective \

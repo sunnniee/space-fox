@@ -88,6 +88,7 @@ registerBang({
 
     componentHandlers: [{
         match: /^wikipedia:/,
+        type: "message",
         handle: async ctx => {
             const [, id, segmentNr] = ctx.data.customID.split(":");
             const segment = allSegments[segmentNr];

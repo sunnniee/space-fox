@@ -58,6 +58,7 @@ registerBang({
 
     componentHandlers: [{
         match: /^mdn:/,
+        type: "message",
         handle: async ctx => {
             const [, id, messageNr, i] = ctx.data.customID.split(":");
             if (id !== ctx.user.id || !messages[messageNr]) return;

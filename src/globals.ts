@@ -1,4 +1,4 @@
-import type { AnyTextableChannel, Message } from "oceanic.js";
+import type { AnyTextableChannel, Message, Uncached } from "oceanic.js";
 
 import type { Bang, CommandList, ComponentHandler, PromptHistoryItem } from "./types.d.ts";
 
@@ -9,7 +9,7 @@ export const bangs: Record<string, Bang> = {};
 export const allComponentHandlers: ComponentHandler[] = [];
 
 export const bangInputs: Record<string, {
-    message: Message<AnyTextableChannel>;
+    message: Message<AnyTextableChannel | Uncached>;
     at: number;
 }> = {};
 

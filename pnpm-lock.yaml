@@ -17,6 +17,9 @@ importers:
       oceanic.js:
         specifier: ^1.12.0
         version: 1.12.0
+      quick-score:
+        specifier: ^0.2.0
+        version: 0.2.0
     devDependencies:
       '@stylistic/eslint-plugin':
         specifier: ^5.1.0
@@ -907,6 +910,9 @@ packages:
 
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
+
+  quick-score@0.2.0:
+    resolution: {integrity: sha512-y9PW9rl7BhjTykkGYi4wh0FsXWrWFv3IJVxtAI9FMargSOhqzRN3OjO2itpw63PoSu1FY07i8B2aCwpolQucOQ==}
 
   readdirp@3.6.0:
     resolution: {integrity: sha512-hOS089on8RduqdbhvQ5Z37A0ESjsqz6qnRcffsMU3495FuTdqSm+7bhJ29JvIOsBDEEnan5DPu9t3To9VRlMzA==}
@@ -2170,6 +2176,8 @@ snapshots:
   punycode@2.3.1: {}
 
   queue-microtask@1.2.3: {}
+
+  quick-score@0.2.0: {}
 
   readdirp@3.6.0:
     dependencies:

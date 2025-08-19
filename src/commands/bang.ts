@@ -1,7 +1,6 @@
 import type { Context } from "vm";
 import { ApplicationCommandOptionTypes, ApplicationCommandTypes, MessageFlags } from "oceanic.js";
-import type { AnyTextableChannel, CommandInteraction, Message } from "oceanic.js";
-import { registerCommand } from "../utils/commands.ts";
+import { handleError, registerCommand } from "../utils/commands.ts";
 import { bangRegex, bangs, bangInputs } from "../globals.ts";
 import { bangsByTitle, canUseBang, formatAndAddLinkButton, getBangExamples } from "../utils/bangs.ts";
 
@@ -16,20 +15,6 @@ function matchBang(content: string): RegExpMatchArray | null {
         [matchOutput[1], matchOutput[2]] = [matchOutput[2], matchOutput[1]];
     }
     return matchOutput;
-}
-
-function handleError(ctx: CommandInteraction, e: any, ephemeralFlag?: number) {
-    if (!process.env.SUPPRESS_WARNINGS) console.log(e);
-    let error = "Unknown error";
-    try {
-        error = e.toString()
-            .replace(/https?:\/\/[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()!@:%_+.~#?&//=]*)/g, "[link]")
-            .replace(/\/webhooks\/\d+\/\w+/g, "/[redacted]");
-    } catch { }
-    ctx.reply({
-        content: `Something went wrong while running that, oop\n\`\`\`${error}\`\`\``,
-        flags: ephemeralFlag
-    }).catch(() => { });
 }
 
 registerCommand({
@@ -202,7 +187,7 @@ registerCommand({
     type: ApplicationCommandTypes.MESSAGE,
     execute: async ctx => {
         bangInputs[ctx.user.id] = {
-            message: ctx.data.target as Message<AnyTextableChannel>,
+            message: ctx.data.target,
             at: Date.now()
         };
 

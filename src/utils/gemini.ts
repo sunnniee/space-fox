@@ -1,5 +1,5 @@
 import { ComponentTypes, MessageFlags } from "oceanic.js";
-import type { Attachment, CreateMessageOptions, MessageComponent } from "oceanic.js";
+import type { CreateMessageOptions, MessageComponent } from "oceanic.js";
 
 import type { InlineData, PromptHistoryItem, PromptOptions, PromptResult } from "../types.d.ts";
 import { convert } from "./convert.ts";
@@ -154,7 +154,7 @@ function errorMessage(e: any) {
 
 export async function prompt(
     content: string,
-    attachments: Attachment[],
+    attachments: ({ url: string; contentType?: string })[],
     functions: FunctionDefs[number]["name"][] | "all",
     options: PromptOptions = {}
 ): Promise<PromptResult> {

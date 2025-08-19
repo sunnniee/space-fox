@@ -1,10 +1,7 @@
+import { MessageFlags } from "oceanic.js";
 import { client } from "../client.ts";
 import { allComponentHandlers, commands } from "../globals.ts";
-import type { ComponentHandler, ModalComponentHandler } from "../types.js";
-
-function isModalHandler(handler: ComponentHandler): handler is ModalComponentHandler {
-    return "modal" in handler;
-}
+import { handleError } from "../utils/commands.ts";
 
 client.on("interactionCreate", async ctx => {
     if (ctx.isCommandInteraction()) {
@@ -18,9 +15,9 @@ client.on("interactionCreate", async ctx => {
                 });
 
                 if (subcommand)
-                    return cmd.execute[subcommand](ctx, ...input);
+                    return cmd.execute[subcommand](ctx, ...input).catch(e => handleError(ctx, e, MessageFlags.EPHEMERAL));
                 // @ts-expect-error only an object if the command has subcommands
-                else return cmd.execute(ctx, ...input);
+                else return cmd.execute(ctx, ...input).catch(e => handleError(ctx, e, MessageFlags.EPHEMERAL));
             }
         });
     } else if (ctx.isAutocompleteInteraction()) {
@@ -39,13 +36,21 @@ client.on("interactionCreate", async ctx => {
             }
         });
     } else if (ctx.isComponentInteraction() || ctx.isModalSubmitInteraction()) {
-        allComponentHandlers.forEach(handler => {
+        allComponentHandlers.forEach(async handler => {
             if (handler.match.test(ctx.data.customID)) {
-                if (isModalHandler(handler) && ctx.isModalSubmitInteraction())
-                    return handler.handle(ctx, ...ctx.data.components.raw.flatMap(v => v.components.map(c => c.value)));
+                if (handler.type === "modal" && ctx.isModalSubmitInteraction())
+                    try {
+                        return await handler.handle(ctx, ...ctx.data.components.raw.flatMap(v => v.components.map(c => c.value)));
+                    } catch (e) {
+                        return handleError(ctx, e, MessageFlags.EPHEMERAL);
+                    }
                 // god typescript is dumb
-                else if (!isModalHandler(handler) && ctx.isComponentInteraction())
-                    return handler.handle(ctx);
+                else if (handler.type === "message" && ctx.isComponentInteraction())
+                    try {
+                        return await handler.handle(ctx);
+                    } catch (e) {
+                        return handleError(ctx, e, MessageFlags.EPHEMERAL);
+                    }
             }
         });
     }

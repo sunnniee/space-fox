@@ -25,7 +25,7 @@ client.on("messageCreate", async msg => {
         if (parameters.length > 1) return;
 
         const parameter = parameters[0];
-        let content = origContent;
+        let content = origContent ?? "";
         const attachments = msg.attachments.toArray();
         const input = bangInputs[msg.author.id];
 
