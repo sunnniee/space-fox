@@ -1,10 +1,11 @@
 import { ComponentBuilder, EmbedBuilder } from "@oceanicjs/builders";
 import { ComponentTypes } from "oceanic.js";
-import type { ComponentInteraction, Message, MessageActionRow } from "oceanic.js";
+import type { Message, MessageActionRow } from "oceanic.js";
 import { wikipedia } from "../utils/wikipedia.ts";
 import { client } from "../client.ts";
 import { purgeOldValues } from "../utils/purge.ts";
 import { registerBang } from "../utils/bangs.ts";
+import { ComponentHandlerTypes } from "../types.ts";
 
 const SEGMENT_MARKER = "@@segment marker@@";
 function extractSegments(text: string): string[] /* [(Brief), start of content 1, (Top), content 1, title 2, content 2, ...] */ {
@@ -88,13 +89,12 @@ registerBang({
 
     componentHandlers: [{
         match: /^wikipedia:/,
-        type: "message",
-        handle: async ctx => {
+        type: ComponentHandlerTypes.STRING_SELECT,
+        handle: async (ctx, pos) => {
             const [, id, segmentNr] = ctx.data.customID.split(":");
             const segment = allSegments[segmentNr];
             if (ctx.user.id !== id || !segment) return;
 
-            const pos = (ctx as ComponentInteraction<ComponentTypes.STRING_SELECT>).data.values.raw[0];
             const title = segment.titles[pos], content = segment.contents[pos];
             const { text: info, reduced } = reduce(content);
 

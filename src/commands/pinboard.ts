@@ -6,6 +6,7 @@ import { registerCommand } from "../utils/commands.ts";
 import { JSONDatabase } from "../utils/database.ts";
 import { ocr } from "../utils/ocr.ts";
 import { attachmentUrlToImageInput, prompt } from "../utils/gemini.ts";
+import { ComponentHandlerTypes } from "../types.ts";
 
 interface PinboardItem {
     id: number;
@@ -226,7 +227,7 @@ registerCommand({
     },
     componentHandlers: [{
         match: /^pin-/,
-        type: "message",
+        type: ComponentHandlerTypes.BUTTON,
         handle: async ctx => {
             const [, direction, idStr, leftStr, rightStr, userId] = ctx.data.customID.split("-");
             if (ctx.user.id !== userId) return;
@@ -295,7 +296,7 @@ registerCommand({
         }
     }, {
         match: /^pinboard-manage-/,
-        type: "message",
+        type: ComponentHandlerTypes.BUTTON,
         handle: async ctx => {
             const [, , id, userId] = ctx.data.customID.split("-");
             if (ctx.user.id !== userId) return;
@@ -327,13 +328,11 @@ registerCommand({
         }
     }, {
         match: /^pinboard-select-/,
-        type: "message",
-        handle: async ctx => {
+        type: ComponentHandlerTypes.STRING_SELECT,
+        handle: async (ctx, pos) => {
             const [, , id] = ctx.data.customID.split("-");
             const pinboard = allPinboards.get(ctx.user.id, true);
             const pin = pinboard.pins.find(p => p.id === Number(id));
-            // TODO: pretty handling (also update edit below and wikipedia)
-            const pos = (ctx as ComponentInteraction<ComponentTypes.STRING_SELECT>).data.values.raw[0];
             const image = pin.content.media!.at(Number(pos));
 
             if (image.type.startsWith("video/"))
@@ -369,15 +368,15 @@ registerCommand({
         }
     }, {
         match: /^pinboard-edit-/,
-        type: "message",
-        handle: async ctx => {
+        type: ComponentHandlerTypes.STRING_SELECT,
+        handle: async (ctx, option) => {
             const [, , id, pos] = ctx.data.customID.split("-");
             const pinboard = allPinboards.get(ctx.user.id, true);
             const pin = pinboard.pins.find(p => p.id === Number(id));
             const index = pinboard.pins.indexOf(pin);
             const image = pin.content.media!.at(Number(pos));
 
-            switch ((ctx as ComponentInteraction<ComponentTypes.STRING_SELECT>).data.values.raw[0]) {
+            switch (option) {
                 case "write": {
                     return await descriptionModal(ctx, pin, Number(pos), image.description);
                 }
@@ -429,7 +428,7 @@ registerCommand({
         }
     }, {
         match: /^pinboard-modal-/,
-        type: "modal",
+        type: ComponentHandlerTypes.MODAL,
         handle: async (ctx, description) => {
             const [, , id, pos] = ctx.data.customID.split("-");
             const pinboard = allPinboards.get(ctx.user.id, true);
@@ -448,7 +447,7 @@ registerCommand({
         }
     }, {
         match: /^pinboard-delete-/,
-        type: "message",
+        type: ComponentHandlerTypes.BUTTON,
         handle: async ctx => {
             const [, , id, userId] = ctx.data.customID.split("-");
             if (ctx.user.id !== userId) return;
@@ -474,7 +473,7 @@ registerCommand({
         }
     }, {
         match: /^pinboard-confirm-/,
-        type: "message",
+        type: ComponentHandlerTypes.BUTTON,
         handle: async ctx => {
             const [, , type, idStr] = ctx.data.customID.split("-");
             const id = Number(idStr);
@@ -501,7 +500,7 @@ registerCommand({
         }
     }, {
         match: /^pinboard-explode-/,
-        type: "message",
+        type: ComponentHandlerTypes.BUTTON,
         handle: async ctx => {
             const [, , userId] = ctx.data.customID.split("-");
             if (ctx.user.id !== userId) return;

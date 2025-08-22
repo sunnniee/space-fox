@@ -1,5 +1,5 @@
-import { AnyInteractionChannel, AnyTextableChannel, Attachment, CommandInteraction, CreateMessageOptions, Message, User } from "oceanic.js";
-import type { ApplicationCommandOptionsWithValue, ApplicationCommandOptionTypes, ApplicationCommandTypes, AutocompleteInteraction, ComponentInteraction, CreateApplicationCommandOptions, ModalSubmitInteraction, Uncached } from "oceanic.js";
+import { Attachment, CommandInteraction, Message, User } from "oceanic.js";
+import type { AnyInteractionChannel, AnyTextableChannel, ApplicationCommandOptionsWithValue, ApplicationCommandOptionTypes, ApplicationCommandTypes, AutocompleteInteraction, ComponentInteraction, ComponentTypes, CreateApplicationCommandOptions, CreateMessageOptions, ModalSubmitInteraction, Uncached } from "oceanic.js";
 import type { PermissionTier } from "./permissions.ts";
 
 export type BangResult = {
@@ -10,17 +10,28 @@ export type BangResult = {
 
 export type Context = Message<AnyTextableChannel | Uncached> | (CommandInteraction<AnyInteractionChannel | Uncached> & { author: User });
 
-export type MessageComponentHandler = {
+export enum ComponentHandlerTypes {
+    MODAL,
+    BUTTON,
+    STRING_SELECT
+}
+
+export type ButtonComponentHandler = {
     match: RegExp;
-    type: "message";
-    handle: (ctx: ComponentInteraction) => Promise<any>;
+    type: ComponentHandlerTypes.BUTTON;
+    handle: (ctx: ComponentInteraction<ComponentTypes.BUTTON>) => Promise<any>;
+};
+export type StringSelectComponentHandler = {
+    match: RegExp;
+    type: ComponentHandlerTypes.STRING_SELECT;
+    handle: (ctx: ComponentInteraction<ComponentTypes.STRING_SELECT>, value: string) => Promise<any>;
 };
 export type ModalComponentHandler = {
     match: RegExp;
-    type: "modal";
+    type: ComponentHandlerTypes.MODAL;
     handle: (ctx: ModalSubmitInteraction, ...input: string[]) => Promise<any>;
 };
-export type ComponentHandler = MessageComponentHandler | ModalComponentHandler;
+export type ComponentHandler = ButtonComponentHandler | StringSelectComponentHandler | ModalComponentHandler;
 
 export type Bang = {
     title: string;

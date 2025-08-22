@@ -2,6 +2,7 @@ import { ApplicationCommandOptionTypes, ApplicationCommandTypes, MessageFlags, T
 import type { CommandInteraction, ModalActionRow, ModalSubmitInteraction } from "oceanic.js";
 import { ComponentBuilder, EmbedBuilder } from "@oceanicjs/builders";
 import { client } from "../client.ts";
+import { ComponentHandlerTypes } from "../types.ts";
 import type { RemindersItem } from "../types.js";
 import { reminders } from "../utils/reminders.ts";
 import { registerCommand } from "../utils/commands.ts";
@@ -178,7 +179,7 @@ registerCommand({
     },
     componentHandlers: [{
         match: /^reminder-modal-/,
-        type: "modal",
+        type: ComponentHandlerTypes.MODAL,
         handle: async (ctx, durString, note, eph) => {
             const ephemeral = !!eph;
             const duration = parseDate(durString);

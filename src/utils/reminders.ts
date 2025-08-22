@@ -1,5 +1,5 @@
 import { client } from "../client.ts";
-import type { RemindersItem } from "../types.d.ts";
+import type { RemindersItem } from "../types.ts";
 import { JSONDatabase } from "./database.ts";
 
 export const reminders = new JSONDatabase<RemindersItem>("data/reminders.json");

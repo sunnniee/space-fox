@@ -2,6 +2,7 @@ import { MessageFlags } from "oceanic.js";
 import { client } from "../client.ts";
 import { allComponentHandlers, commands } from "../globals.ts";
 import { handleError } from "../utils/commands.ts";
+import { ComponentHandlerTypes } from "../types.ts";
 
 client.on("interactionCreate", async ctx => {
     if (ctx.isCommandInteraction()) {
@@ -38,16 +39,24 @@ client.on("interactionCreate", async ctx => {
     } else if (ctx.isComponentInteraction() || ctx.isModalSubmitInteraction()) {
         allComponentHandlers.forEach(async handler => {
             if (handler.match.test(ctx.data.customID)) {
-                if (handler.type === "modal" && ctx.isModalSubmitInteraction())
+                if (handler.type === ComponentHandlerTypes.MODAL && ctx.isModalSubmitInteraction())
                     try {
                         return await handler.handle(ctx, ...ctx.data.components.raw.flatMap(v => v.components.map(c => c.value)));
                     } catch (e) {
                         return handleError(ctx, e, MessageFlags.EPHEMERAL);
                     }
-                // god typescript is dumb
-                else if (handler.type === "message" && ctx.isComponentInteraction())
+                else if (handler.type === ComponentHandlerTypes.BUTTON && ctx.isComponentInteraction() && ctx.isButtonComponentInteraction())
                     try {
                         return await handler.handle(ctx);
+                    } catch (e) {
+                        return handleError(ctx, e, MessageFlags.EPHEMERAL);
+                    }
+                else if (handler.type === ComponentHandlerTypes.STRING_SELECT
+                    && ctx.isComponentInteraction()
+                    && ctx.isSelectMenuComponentInteraction())
+                    try {
+                        // @ts-expect-error it's ignoring the type guard for some reason?
+                        return await handler.handle(ctx, ctx.data.values.raw[0]);
                     } catch (e) {
                         return handleError(ctx, e, MessageFlags.EPHEMERAL);
                     }

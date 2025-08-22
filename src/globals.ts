@@ -1,6 +1,6 @@
 import type { AnyTextableChannel, Message, Uncached } from "oceanic.js";
 
-import type { Bang, CommandList, ComponentHandler, PromptHistoryItem } from "./types.d.ts";
+import type { Bang, CommandList, ComponentHandler, PromptHistoryItem } from "./types.ts";
 
 export const bangRegex = /(?:(.*)\s|^)!([\w-]+)$/si;
 

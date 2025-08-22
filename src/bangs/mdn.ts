@@ -5,6 +5,7 @@ import type { Message, MessageActionRow, MessageComponent, SeparatorComponent, T
 import { client } from "../client.ts";
 import { formatAndAddLinkButton, registerBang } from "../utils/bangs.ts";
 import { purgeOldValues } from "../utils/purge.ts";
+import { ComponentHandlerTypes } from "../types.ts";
 
 type SearchResult = {
     documents: {
@@ -58,13 +59,14 @@ registerBang({
 
     componentHandlers: [{
         match: /^mdn:/,
-        type: "message",
+        type: ComponentHandlerTypes.BUTTON,
         handle: async ctx => {
             const [, id, messageNr, i] = ctx.data.customID.split(":");
             if (id !== ctx.user.id || !messages[messageNr]) return;
             const results = messages[messageNr].buttons;
             const { title, url } = results[i];
 
+            console.log(url);
             const result = await (await fetch(`https://developer.mozilla.org${url}`)).text();
             const match = result.match(/section-content">(?<summary>.+?)<\/div>.+?id="try_it">.{0,50}class="section-content">(?<description>.+?)<\/pre><\/div>/si)
                 ?? result.match(/section-content">(?<summary>.+?)<\/div>.+?href="#description">.{0,40}class="section-content">(?<description>.+?)<\/section>/si)
@@ -76,7 +78,7 @@ registerBang({
                     .toJSON()],
                 components: new ComponentBuilder<MessageActionRow>()
                     .addURLButton({
-                        label: `Open in ${title}`,
+                        label: `Open in ${bangTitle}`,
                         url: `https://developer.mozilla.org${url}`
                     })
                     .toJSON(),

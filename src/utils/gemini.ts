@@ -1,7 +1,7 @@
 import { ComponentTypes, MessageFlags } from "oceanic.js";
 import type { CreateMessageOptions, MessageComponent } from "oceanic.js";
 
-import type { InlineData, PromptHistoryItem, PromptOptions, PromptResult } from "../types.d.ts";
+import type { InlineData, PromptHistoryItem, PromptOptions, PromptResult } from "../types.ts";
 import { convert } from "./convert.ts";
 import { wikipedia } from "./wikipedia.ts";
 
