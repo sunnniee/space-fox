@@ -66,11 +66,11 @@ registerBang({
             const results = messages[messageNr].buttons;
             const { title, url } = results[i];
 
-            console.log(url);
-            const result = await (await fetch(`https://developer.mozilla.org${url}`)).text();
-            const match = result.match(/section-content">(?<summary>.+?)<\/div>.+?id="try_it">.{0,50}class="section-content">(?<description>.+?)<\/pre><\/div>/si)
-                ?? result.match(/section-content">(?<summary>.+?)<\/div>.+?href="#description">.{0,40}class="section-content">(?<description>.+?)<\/section>/si)
-                ?? result.match(/section-content">(?<summary>.+?)<\/div>/si);
+            const result = (await (await fetch(`https://developer.mozilla.org${url}`)).text())
+                .replace(/<!--\/?lit-.+?-->/g, "").replace(/ +/g, " ");
+            const match = result.match(/content-section"\s+>\s+<p>(?<summary>.+?)<\/p>.+?href="#try_it".{0,150}<\/interactive-example>(?<description>.+?)<\/pre><\/div>/si)
+                ?? result.match(/content-section"\s+>\s+(?<summary>.+?)<\/p>.+?href="#description">.{0,50}<\/h2>(?<description>.+?)<\/section>/si)
+                ?? result.match(/content-section"\s+>\s+(?<summary>.+?)<\/p>/si);
             if (!match) return ctx.reply({
                 embeds: [new EmbedBuilder()
                     .setColor(0x1b1b1b)
