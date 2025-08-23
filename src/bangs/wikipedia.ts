@@ -8,7 +8,8 @@ import { registerBang } from "../utils/bangs.ts";
 import { ComponentHandlerTypes } from "../types.ts";
 
 const SEGMENT_MARKER = "@@segment marker@@";
-function extractSegments(text: string): string[] /* [(Brief), start of content 1, (Top), content 1, title 2, content 2, ...] */ {
+/* [(Brief), start of content 1, (Top), content 1, title 2, content 2, ...] */
+function extractSegments(text: string): string[] {
     const relevant = text.match(/<(?:p|h\d).+?<\/p>/gs);
     if (!relevant) return [];
     let result = `(Brief)${SEGMENT_MARKER}(Top)${SEGMENT_MARKER}\n`;
@@ -58,14 +59,17 @@ purgeOldValues(allSegments, 480_000, obj => {
     if (msg) {
         client.editMessage(msg, {
             components: msg.components.filter(c =>
-                c.type === ComponentTypes.ACTION_ROW && c.components[0].type !== ComponentTypes.STRING_SELECT
-            ),
+                c.type === ComponentTypes.ACTION_ROW && c.components[0].type !== ComponentTypes.STRING_SELECT),
             allowedMentions: { repliedUser: false } // not sure why it needs this
         });
     }
 });
 
-const wikipediaEmbed = (articleTitle: string, articleSection: string, thumbnail: string, content: string, note: boolean) => {
+const wikipediaEmbed = (articleTitle: string,
+    articleSection: string,
+    thumbnail: string,
+    content: string,
+    note: boolean) => {
     const embed = new EmbedBuilder()
         .setColor(0xffffff)
         .setAuthor(`${articleTitle}${articleSection ? ` - ${articleSection}` : ""}`,

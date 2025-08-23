@@ -16,7 +16,8 @@ client.on("interactionCreate", async ctx => {
                 });
 
                 if (subcommand)
-                    return cmd.execute[subcommand](ctx, ...input).catch(e => handleError(ctx, e, MessageFlags.EPHEMERAL));
+                    return cmd.execute[subcommand](ctx, ...input)
+                        .catch(e => handleError(ctx, e, MessageFlags.EPHEMERAL));
                 // @ts-expect-error only an object if the command has subcommands
                 else return cmd.execute(ctx, ...input).catch(e => handleError(ctx, e, MessageFlags.EPHEMERAL));
             }
@@ -41,11 +42,14 @@ client.on("interactionCreate", async ctx => {
             if (handler.match.test(ctx.data.customID)) {
                 if (handler.type === ComponentHandlerTypes.MODAL && ctx.isModalSubmitInteraction())
                     try {
-                        return await handler.handle(ctx, ...ctx.data.components.raw.flatMap(v => v.components.map(c => c.value)));
+                        return await handler
+                            .handle(ctx, ...ctx.data.components.raw.flatMap(v => v.components.map(c => c.value)));
                     } catch (e) {
                         return handleError(ctx, e, MessageFlags.EPHEMERAL);
                     }
-                else if (handler.type === ComponentHandlerTypes.BUTTON && ctx.isComponentInteraction() && ctx.isButtonComponentInteraction())
+                else if (handler.type === ComponentHandlerTypes.BUTTON
+                    && ctx.isComponentInteraction()
+                    && ctx.isButtonComponentInteraction())
                     try {
                         return await handler.handle(ctx);
                     } catch (e) {

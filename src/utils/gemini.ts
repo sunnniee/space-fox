@@ -10,14 +10,12 @@ type FunctionDefs = typeof functionDefs;
 // Step 1: Convert JSON Schema types to TS types
 type JSONSchemaType = { type: "string" | "number" | "boolean" };
 
-/* eslint-disable stylistic/indent*/
 type SchemaToTS<T extends Record<string, JSONSchemaType>> = {
     [K in keyof T]: T[K]["type"] extends "string" ? string
-    : T[K]["type"] extends "number" ? number
-    : T[K]["type"] extends "boolean" ? boolean
-    : never;
+        : T[K]["type"] extends "number" ? number
+            : T[K]["type"] extends "boolean" ? boolean
+                : never;
 };
-/* eslint-enable stylistic/indent*/
 
 // Step 2: Build a mapping of function name to its parameter object
 type FunctionParamMap = {
@@ -35,8 +33,7 @@ async function basicCalculator(input: string) {
         res = eval(input.replace(/[^\d+\-*/.()]/g, "")
             .replace(/\++/g, "+").replace(/-+/g, "-")
             .replace(/\/+/g, "/")
-            .replace(/\(\)/g, "")
-        );
+            .replace(/\(\)/g, ""));
     } catch {
         return { error: "Failed to calculate" };
     }
@@ -203,7 +200,8 @@ export async function prompt(
     });
     if (fns.length) body.tools = [{ functionDeclarations: fns }];
 
-    return await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+    return await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent\
+?key=${process.env.GEMINI_API_KEY}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -298,12 +296,11 @@ export function geminiResponse(response: PromptResult, debugInfo?: PromptOptions
         content: `## Debug info
 Using model \`${debugInfo.model}\`, image generation ${debugInfo.imageGeneration ? "on" : "off"}
 Function calls:
-${/* eslint-disable stylistic/indent*/
-            response.history.map(i => i.role === "model" && "functionCall" in i.parts[0]
-                ? `\`${i.parts[0].functionCall.name}(${JSON.stringify(i.parts[0].functionCall.args)})\``
-                : undefined
-            ).filter(i => i)
-/* eslint-enable stylistic/indent*/}`
+${
+    response.history.map(i => i.role === "model" && "functionCall" in i.parts[0]
+        ? `\`${i.parts[0].functionCall.name}(${JSON.stringify(i.parts[0].functionCall.args)})\``
+        : undefined).filter(i => i)
+}`
     });
     container.components.push({
         type: ComponentTypes.TEXT_DISPLAY,

@@ -4,10 +4,13 @@ import type { AnyInteractionChannel, AnyTextableChannel, AnyTextableGuildChannel
 config();
 
 interface Client extends _Client<ClientEvents> {
-    sendMessage: (channelID: string, content: CreateMessageOptions | string, tryAgain?: boolean) => Promise<void | Message<AnyTextableGuildChannel>>;
-    editMessage: (message: Message, content: CreateMessageOptions | string, tryAgain?: boolean) => Promise<void | Message<AnyTextableGuildChannel>>;
+    sendMessage: (channelID: string, content: CreateMessageOptions | string, tryAgain?: boolean)
+    => Promise<void | Message<AnyTextableGuildChannel>>;
+    editMessage: (message: Message, content: CreateMessageOptions | string, tryAgain?: boolean)
+    => Promise<void | Message<AnyTextableGuildChannel>>;
     deleteMessage: (message: Message, tryAgain?: boolean) => Promise<void | unknown>;
-    respond: (message: Message, content: CreateMessageOptions | string) => Promise<void | Message<AnyTextableGuildChannel>>;
+    respond: (message: Message, content: CreateMessageOptions | string)
+    => Promise<void | Message<AnyTextableGuildChannel>>;
     sendTyping: (channelID: string) => Promise<void>;
 }
 

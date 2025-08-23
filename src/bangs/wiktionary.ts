@@ -10,7 +10,9 @@ registerBang({
     exampleQueries: ["bedazzle", "nincompoop", "parallelogram", "aura farming", "shower"],
     execute: async content => {
         const query = await (
-            await fetch(`https://en.wiktionary.org/w/api.php?action=opensearch&search=${encodeURIComponent(content)}&limit=1`)
+            await fetch(
+                `https://en.wiktionary.org/w/api.php?action=opensearch&search=${encodeURIComponent(content)}&limit=1`
+            )
         ).json();
         if (!Array.isArray(query) || !query[3][0]) return {
             content: {
@@ -24,7 +26,9 @@ registerBang({
 
         const title = query[1][0];
         const article = await (
-            await fetch(`https://en.wiktionary.org/w/api.php?action=query&prop=extracts&explaintext&titles=${title}&format=json`)
+            await fetch(
+                `https://en.wiktionary.org/w/api.php?action=query&prop=extracts&explaintext&titles=${title}&format=json`
+            )
         ).json() as any;
         const result = Object.values(article.query.pages as Record<string, any>)[0].extract as string;
 

@@ -8,7 +8,8 @@ export type BangResult = {
     afterSend?: (msg: Message<AnyTextableChannel>) => any;
 };
 
-export type Context = Message<AnyTextableChannel | Uncached> | (CommandInteraction<AnyInteractionChannel | Uncached> & { author: User });
+export type Context = Message<AnyTextableChannel | Uncached>
+    | (CommandInteraction<AnyInteractionChannel | Uncached> & { author: User });
 
 export enum ComponentHandlerTypes {
     MODAL,
@@ -94,31 +95,35 @@ export type OptionTypeMapping = {
     [ApplicationCommandOptionTypes.BOOLEAN]: boolean;
 };
 
-/* eslint-disable stylistic/indent */
 export type OptionsToArgs<T extends readonly ApplicationCommandOptionsWithValue[]> = {
     [K in keyof T]: T[K] extends ApplicationCommandOptionsWithValue
-    ? T[K]["type"] extends keyof OptionTypeMapping
-    ? T[K]["required"] extends false
-    ? OptionTypeMapping[T[K]["type"]] | undefined
-    : OptionTypeMapping[T[K]["type"]]
-    : never
-    : never
+        ? T[K]["type"] extends keyof OptionTypeMapping
+            ? T[K]["required"] extends false
+                ? OptionTypeMapping[T[K]["type"]] | undefined
+                : OptionTypeMapping[T[K]["type"]]
+            : never
+        : never
 };
-/* eslint-enable stylistic/indent */
 
-export interface ChatInputCommand<C extends typeof ApplicationCommandTypes.CHAT_INPUT, O extends readonly ApplicationCommandOptionsWithValue[]> {
+export interface ChatInputCommand<
+    C extends typeof ApplicationCommandTypes.CHAT_INPUT,
+    O extends readonly ApplicationCommandOptionsWithValue[]
+> {
     name: string;
     type: C;
     description: string;
     globalDescription?: string;
     predicate?: () => boolean;
     options?: O;
-    execute: (ctx: CommandInteraction<AnyInteractionChannel | Uncached>, ...args: OptionsToArgs<O>) => Promise<any>;
+    execute: (ctx: CommandInteraction<AnyInteractionChannel | Uncached, C>, ...args: OptionsToArgs<O>) => Promise<any>;
     componentHandlers?: ComponentHandler[];
-    autocomplete?: (ctx: AutocompleteInteraction<AnyInteractionChannel | Uncached>, ...args: Partial<OptionsToArgs<O>>) => Promise<any>;
+    autocomplete?: (ctx: AutocompleteInteraction<AnyInteractionChannel | Uncached>,
+        ...args: Partial<OptionsToArgs<O>>) => Promise<any>;
 }
 
-export interface ContextMenuCommand<C extends typeof ApplicationCommandTypes.USER | typeof ApplicationCommandTypes.MESSAGE> {
+export interface ContextMenuCommand<
+    C extends typeof ApplicationCommandTypes.USER | typeof ApplicationCommandTypes.MESSAGE
+> {
     name: string;
     type: C;
     predicate?: () => boolean;
@@ -126,11 +131,11 @@ export interface ContextMenuCommand<C extends typeof ApplicationCommandTypes.USE
     componentHandlers?: ComponentHandler[];
 }
 
-/* eslint-disable stylistic/indent */
 export type Command<C extends ApplicationCommandTypes, O extends readonly ApplicationCommandOptionsWithValue[]> =
     C extends typeof ApplicationCommandTypes.CHAT_INPUT ? ChatInputCommand<C, O>
-    : C extends typeof ApplicationCommandTypes.USER | typeof ApplicationCommandTypes.MESSAGE ? ContextMenuCommand<C> : never;
-/* eslint-enable stylistic/indent */
+        : C extends typeof ApplicationCommandTypes.USER | typeof ApplicationCommandTypes.MESSAGE
+            ? ContextMenuCommand<C>
+            : never;
 
 export type ExecuteFn = (...args: any[]) => Promise<any>;
 export type CommandList = (CreateApplicationCommandOptions & {

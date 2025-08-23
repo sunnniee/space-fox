@@ -170,7 +170,11 @@ function makePinboardMessage(pin: PinboardItem, userId: string, id: number, idsL
     };
 }
 
-function descriptionModal(ctx: ComponentInteraction, pin: PinboardItem, imageIndex: number, value?: string, placeholder?: string) {
+function descriptionModal(ctx: ComponentInteraction,
+    pin: PinboardItem,
+    imageIndex: number,
+    value?: string,
+    placeholder?: string) {
     return ctx.createModal({
         title: "Edit Image Description",
         customID: `pinboard-modal-${pin.id}-${imageIndex}`,
@@ -336,9 +340,11 @@ registerCommand({
             const image = pin.content.media!.at(Number(pos));
 
             if (image.type.startsWith("video/"))
-                return await descriptionModal(ctx, pin, Number(pos), image.description, "Sorry, auto-generation is not supported for videos");
+                return await descriptionModal(ctx, pin, Number(pos),
+                    image.description, "Sorry, auto-generation is not supported for videos");
             else if (image.type === "image/gif")
-                return await descriptionModal(ctx, pin, Number(pos), image.description, "Sorry, auto-generation is not supported for GIFs");
+                return await descriptionModal(ctx, pin, Number(pos),
+                    image.description, "Sorry, auto-generation is not supported for GIFs");
             else {
                 const options = [{
                     label: "Write a new description",
@@ -539,7 +545,8 @@ registerCommand({
                 text: msg.content,
                 embedContent: extractContentFromEmbed(msg.embeds[0]),
                 media: msg.attachments
-                    .filter(a => a.contentType && (a.contentType.startsWith("image/") || a.contentType.startsWith("video/")))
+                    .filter(a => a.contentType
+                        && (a.contentType.startsWith("image/") || a.contentType.startsWith("video/")))
                     .map(a => ({
                         link: a.url,
                         type: a.contentType,
@@ -549,7 +556,9 @@ registerCommand({
                     .filter(c => c.type === ComponentTypes.ACTION_ROW)
                     .map(c => c.components).flat()
                     .filter(c => c.type === ComponentTypes.BUTTON && c.style !== ButtonStyles.PREMIUM)
-                    .map(c => c.style === ButtonStyles.LINK ? c : { ...c, disabled: true, emoji: c.emoji?.id ? null : c.emoji })
+                    .map(c => c.style === ButtonStyles.LINK
+                        ? c
+                        : { ...c, disabled: true, emoji: c.emoji?.id ? null : c.emoji })
             }
         } as PinboardItem;
         pin.searchableContent = generateSearchableContent(pin);

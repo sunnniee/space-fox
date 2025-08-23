@@ -57,7 +57,9 @@ export function canUseBang(bangName: string, user: { id: string }, guild?: { id:
     return bang.restrict.includes(tier);
 }
 
-export function formatAndAddLinkButton(content: string | CreateMessageOptions, title: string, link: string): CreateMessageOptions {
+export function formatAndAddLinkButton(content: string | CreateMessageOptions,
+    title: string,
+    link: string): CreateMessageOptions {
     if (typeof content === "string") content = { content: content };
     if (link) {
         content.components ??= [];

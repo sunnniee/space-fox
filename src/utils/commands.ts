@@ -12,11 +12,12 @@ import type { Command } from "../types.js";
 function isChatInputCommand<
     C extends ApplicationCommandTypes,
     O extends readonly ApplicationCommandOptionsWithValue[]
-// @ts-expect-error Type 'ChatInputCommand<ApplicationCommandTypes.CHAT_INPUT, O>' is not assignable to type 'Command<C, O>'.
+// @ts-expect-error Type 'Command<ApplicationCommandTypes.CHAT_INPUT, O>' is not assignable to type 'Command<C, O>'.
 >(command: Command<C, O>): command is Command<typeof ApplicationCommandTypes.CHAT_INPUT, O> {
     return command.type === ApplicationCommandTypes.CHAT_INPUT;
 }
-function isChatInputCommandOptions(command: CreateApplicationCommandOptions): command is CreateChatInputApplicationCommandOptions {
+function isChatInputCommandOptions(command: CreateApplicationCommandOptions):
+    command is CreateChatInputApplicationCommandOptions {
     return command.type === ApplicationCommandTypes.CHAT_INPUT;
 }
 
@@ -32,7 +33,9 @@ export function registerCommand<
     }
     const cmd = command as CreateApplicationCommandOptions;
     cmd.integrationTypes = [ApplicationIntegrationTypes.GUILD_INSTALL, ApplicationIntegrationTypes.USER_INSTALL];
-    cmd.contexts = [InteractionContextTypes.BOT_DM, InteractionContextTypes.GUILD, InteractionContextTypes.PRIVATE_CHANNEL];
+    cmd.contexts = [InteractionContextTypes.BOT_DM,
+        InteractionContextTypes.GUILD,
+        InteractionContextTypes.PRIVATE_CHANNEL];
     let isSubcommand = false;
 
     if (isChatInputCommandOptions(cmd)
@@ -91,7 +94,9 @@ export function registerCommand<
     }
 }
 
-export function handleError(ctx: CommandInteraction | ModalSubmitInteraction | ComponentInteraction, e: any, ephemeralFlag?: number) {
+export function handleError(ctx: CommandInteraction | ModalSubmitInteraction | ComponentInteraction,
+    e: any,
+    ephemeralFlag?: number) {
     if (!process.env.SUPPRESS_WARNINGS) console.log(e);
     let error = "Unknown error";
     try {

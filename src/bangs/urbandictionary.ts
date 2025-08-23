@@ -30,7 +30,8 @@ registerBang({
             link: "https://www.urbandictionary.com/define.php?term=" + encodeURIComponent(content)
         };
 
-        const def = (query.list as any[]).sort((a, b) => b.thumbs_up / b.thumbs_down < 0.5 ? 1 : b.thumbs_up - a.thumbs_up)[0];
+        const def = (query.list as any[])
+            .sort((a, b) => b.thumbs_up / b.thumbs_down < 0.5 ? 1 : b.thumbs_up - a.thumbs_up)[0];
 
         return {
             content: {
@@ -38,9 +39,11 @@ registerBang({
                     .setColor(0xffa500)
                     .setAuthor(def.word)
                     .setDescription(`
-${def.definition.replace(/\[(.+?)\]/gm, (_, t) => `[${t}](https://www.urbandictionary.com/define.php?term=${encodeURIComponent(t)})`)}
+${def.definition.replace(/\[(.+?)\]/gm,
+    (_, t) => `[${t}](https://www.urbandictionary.com/define.php?term=${encodeURIComponent(t)})`)}
 
-*${def.example.replace(/\[(.+?)\]/gm, (_, t) => `[${t}](https://www.urbandictionary.com/define.php?term=${encodeURIComponent(t)})`)}*`)
+*${def.example.replace(/\[(.+?)\]/gm,
+    (_, t) => `[${t}](https://www.urbandictionary.com/define.php?term=${encodeURIComponent(t)})`)}*`)
                     .toJSON()]
             },
             link: "https://www.urbandictionary.com/define.php?term=" + encodeURIComponent(def.word)

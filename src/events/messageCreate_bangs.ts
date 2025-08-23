@@ -8,7 +8,8 @@ function handleError(msg: Message, e: any) {
     if (!process.env.SUPPRESS_WARNINGS) console.log(e);
     let error = "Unknown error";
     try {
-        error = e.toString().replace(/https?:\/\/[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()!@:%_+.~#?&//=]*)/g, "[link]");
+        error = e.toString().replace(/https?:\/\/[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()!@:%_+.~#?&//=]*)/g,
+            "[link]");
     } catch { }
     client.respond(msg, {
         content: `Something went wrong while running that, oop\n\`\`\`${error}\`\`\``

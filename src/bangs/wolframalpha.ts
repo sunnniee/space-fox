@@ -11,7 +11,10 @@ registerBang({
     ignoreIfBlank: true,
     exampleQueries: ["sqrt of 1369", "28% of 3 km", "next solar eclipse", "value of MDCLXXIII"],
     execute: async content => {
-        const req = await fetch(`http://api.wolframalpha.com/v1/result?i=${encodeURIComponent(content)}&appid=${process.env.WOLFRAMALPHA_API_KEY}`);
+        const req = await fetch(
+            `http://api.wolframalpha.com/v1/result?i=${encodeURIComponent(content)}\
+&appid=${process.env.WOLFRAMALPHA_API_KEY}`
+        );
         const res = await req.text();
         return {
             content: {

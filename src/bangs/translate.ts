@@ -63,7 +63,7 @@ registerBang({
     execute: async (content, _, ctx, params) => {
         const lang = params || "en";
         const fields: Record<string, any> = {};
-        const isBasic = ctx instanceof CommandInteraction || !ctx.embeds?.length && !ctx.components?.length;
+        const isBasic = ctx instanceof CommandInteraction || (!ctx.embeds?.length && !ctx.components?.length);
 
         if (isBasic)
             fields.content = content;
@@ -99,8 +99,7 @@ registerBang({
         let translations: ({ pos: string; text: string })[];
         try {
             translations = await Promise.all(Object.entries(fields).map(([pos, text]) =>
-                googleTranslate(text, lang).then(({ text }) => Promise.resolve({ pos, text }))
-            ));
+                googleTranslate(text, lang).then(({ text }) => Promise.resolve({ pos, text }))));
         } catch {
             return {
                 content: "Failed to translate"
@@ -109,20 +108,22 @@ registerBang({
 
         const msg: CreateMessageOptions = isBasic ? { content } : {
             content: ctx.content,
-            embeds: structuredClone(ctx.embeds).concat([new EmbedBuilder().setFooter("Translated via Google Translate").toJSON()]),
+            embeds: structuredClone(ctx.embeds).concat([
+                new EmbedBuilder().setFooter("Translated via Google Translate").toJSON()
+            ]),
             components: ctx.components.map(row => ({
                 type: ComponentTypes.ACTION_ROW,
                 components: (row as MessageActionRow).components.map(c =>
                     c.type === ComponentTypes.BUTTON && c.style !== ButtonStyles.PREMIUM
-                        ? c.style === ButtonStyles.LINK ? c : { ...c, disabled: true, emoji: c.emoji?.id ? null : c.emoji }
-                        : null
-                ).filter(v => v)
+                        ? c.style === ButtonStyles.LINK
+                            ? c
+                            : { ...c, disabled: true, emoji: c.emoji?.id ? null : c.emoji }
+                        : null).filter(v => v)
             }))
         };
 
         translations.forEach(({ pos, text }) =>
-            setDeepValue(msg, pos, text)
-        );
+            setDeepValue(msg, pos, text));
         return {
             content: msg
         };

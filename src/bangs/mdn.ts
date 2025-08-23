@@ -147,7 +147,8 @@ registerBang({
                 return [
                     {
                         type: ComponentTypes.TEXT_DISPLAY,
-                        content: `\n### [${entry.title}](https://developer.mozilla.org${entry.mdn_url})\n${entry.summary}\n`
+                        content: `\n### [${entry.title}](https://developer.mozilla.org${entry.mdn_url})
+${entry.summary}\n`
                     } satisfies TextDisplayComponent,
                     {
                         type: ComponentTypes.ACTION_ROW,

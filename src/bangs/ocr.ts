@@ -44,7 +44,8 @@ registerBang({
 
         embed
             .setDescription(text || "[no text detected]")
-            .setFooter(`${isTranslated ? "Source language" : "Language"}: ${res.language}${imgs.length > 1 ? " •︎ Only the first image was read" : ""}`);
+            .setFooter(`${isTranslated ? "Source language" : "Language"}: \
+${res.language}${imgs.length > 1 ? " •︎ Only the first image was read" : ""}`);
         return {
             content: {
                 embeds: [embed.toJSON()]

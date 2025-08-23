@@ -82,7 +82,10 @@ function parseDate(date: string): number | void {
 
 const genUid = (n = 6) => Math.floor(Math.random() * 16 ** n).toString(16).padStart(n, "0");
 
-function addReminder(duration: number, content: string, ctx: CommandInteraction | ModalSubmitInteraction, ephemeral = false): boolean {
+function addReminder(duration: number,
+    content: string,
+    ctx: CommandInteraction | ModalSubmitInteraction,
+    ephemeral = false): boolean {
     const currentReminders = [...reminders.get(ctx.user.id) || []];
     if (currentReminders.length >= 10) return false;
     let uid: string;

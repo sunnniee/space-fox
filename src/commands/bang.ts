@@ -84,8 +84,7 @@ registerCommand({
 
         } else {
             const entries = bangsArray.filter(([, a]) =>
-                canUseBang(a[0], ctx.user, ctx.guildPartial)
-            );
+                canUseBang(a[0], ctx.user, ctx.guildPartial));
 
             const choices = [] as ({ name: string; value: string })[];
             const words = content.trim().split(/\s+/);
@@ -95,8 +94,7 @@ registerCommand({
             let potentialMatches = [] as ([string, string[]])[];
             if (potentialBang) {
                 potentialMatches = entries.filter(([, aliases]) =>
-                    aliases.some(a => a.startsWith(potentialBang))
-                );
+                    aliases.some(a => a.startsWith(potentialBang)));
             }
             if (potentialMatches.length > 0) {
                 choices.push(
@@ -163,7 +161,10 @@ registerCommand({
 
                 bang.execute(content, attachments, context, parameter).then(output => {
                     if (!output?.content)
-                        return ctx.reply({ content: "Got no response, this is probably a bug", flags: MessageFlags.EPHEMERAL });
+                        return ctx.reply({
+                            content: "Got no response, this is probably a bug",
+                            flags: MessageFlags.EPHEMERAL
+                        });
                     const response = output.content, { link } = output;
                     let flags = typeof response === "string" ? 0 : response.flags;
                     if (ephemeral) flags |= MessageFlags.EPHEMERAL;

@@ -8,7 +8,8 @@ registerBang({
     ignoreIfBlank: true,
     execute: async content => {
         const search = await (
-            await fetch(`https://www.explainxkcd.com/wiki/index.php?search=${encodeURIComponent(content)}&title=Special%3ASearch&profile=default&fulltext=1`)
+            await fetch(`https://www.explainxkcd.com/wiki/index.php?search=${encodeURIComponent(content)}\
+&title=Special%3ASearch&profile=default&fulltext=1`)
         ).text();
         const searchMatch = search.match(/mw-search-result-heading.{0,100}title="(\d+): (.+?)"/m);
         if (!searchMatch) {
