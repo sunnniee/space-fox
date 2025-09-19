@@ -67,10 +67,11 @@ function checkCrypto(body: string, short = false) {
 
 export async function convert(input: string, short = false): Promise<string> {
     const page = await fetch(
-        `https://search.brave.com/search?q=convert+${encodeURIComponent(input)}`,
+        "https://search.br" + `ave.com/search?q=convert+${encodeURIComponent(input)}`,
         {
             headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+                "Cookie": "country=all; useLocation=0; summarizer=0;"
             }
         }
     );

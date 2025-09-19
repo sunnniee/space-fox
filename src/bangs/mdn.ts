@@ -16,7 +16,7 @@ type SearchResult = {
     }[];
 };
 
-let messageNr = 42; // too lazy to do a proper id system, not like revealing how many times this was used is disastrous
+let messageNr = Math.floor(Math.random() * 10 ** 7);
 const messages: Record<string, {
     message: Message;
     at: number;

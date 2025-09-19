@@ -44,7 +44,7 @@ function reduce(text: string, maxParagraphs = Infinity) {
     return { text: result, reduced };
 }
 
-let segmentNr = 42;
+let segmentNr = Math.floor(Math.random() * 10 ** 7);
 const allSegments: Record<string, {
     titles: string[];
     contents: string[];
