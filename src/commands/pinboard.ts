@@ -234,7 +234,7 @@ registerCommand({
         type: ComponentHandlerTypes.BUTTON,
         handle: async ctx => {
             const [, direction, idStr, leftStr, rightStr, userId] = ctx.data.customID.split("-");
-            if (ctx.user.id !== userId) return;
+            if (ctx.user.id !== userId) return ctx.deferUpdate();
             const pinboard = allPinboards.get(ctx.user.id, true);
 
             const id = Number(idStr);
@@ -303,7 +303,7 @@ registerCommand({
         type: ComponentHandlerTypes.BUTTON,
         handle: async ctx => {
             const [, , id, userId] = ctx.data.customID.split("-");
-            if (ctx.user.id !== userId) return;
+            if (ctx.user.id !== userId) return ctx.deferUpdate();
             const pinboard = allPinboards.get(ctx.user.id, true);
             const pin = pinboard.pins.find(p => p.id === Number(id));
 
@@ -456,7 +456,7 @@ registerCommand({
         type: ComponentHandlerTypes.BUTTON,
         handle: async ctx => {
             const [, , id, userId] = ctx.data.customID.split("-");
-            if (ctx.user.id !== userId) return;
+            if (ctx.user.id !== userId) return ctx.deferUpdate();
 
             ctx.reply({
                 content: "Are you sure you want to delete this pin?",
@@ -509,7 +509,7 @@ registerCommand({
         type: ComponentHandlerTypes.BUTTON,
         handle: async ctx => {
             const [, , userId] = ctx.data.customID.split("-");
-            if (ctx.user.id !== userId) return;
+            if (ctx.user.id !== userId) return ctx.deferUpdate();
 
             await ctx.deferUpdate();
             await ctx.deleteOriginal();

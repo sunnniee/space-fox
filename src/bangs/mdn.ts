@@ -62,7 +62,7 @@ registerBang({
         type: ComponentHandlerTypes.BUTTON,
         handle: async ctx => {
             const [, id, messageNr, i] = ctx.data.customID.split(":");
-            if (id !== ctx.user.id || !messages[messageNr]) return;
+            if (id !== ctx.user.id || !messages[messageNr]) return ctx.deferUpdate();
             const results = messages[messageNr].buttons;
             const { title, url } = results[i];
 

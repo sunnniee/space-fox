@@ -97,7 +97,7 @@ registerBang({
         handle: async (ctx, pos) => {
             const [, id, segmentNr] = ctx.data.customID.split(":");
             const segment = allSegments[segmentNr];
-            if (ctx.user.id !== id || !segment) return;
+            if (ctx.user.id !== id || !segment) return ctx.deferUpdate();
 
             const title = segment.titles[pos], content = segment.contents[pos];
             const { text: info, reduced } = reduce(content);
