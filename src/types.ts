@@ -58,6 +58,7 @@ export type PromptOptions = {
     model?: string;
     imageGeneration?: boolean;
     history?: PromptHistoryItem[];
+    reasoningBudget?: number;
 };
 
 export type InlineData = {

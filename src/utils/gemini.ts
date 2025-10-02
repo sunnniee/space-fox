@@ -4,6 +4,7 @@ import type { CreateMessageOptions, MessageComponent } from "oceanic.js";
 import type { InlineData, PromptHistoryItem, PromptOptions, PromptResult } from "../types.ts";
 import { convert } from "./convert.ts";
 import { wikipedia } from "./wikipedia.ts";
+import { search } from "./search.ts";
 
 type FunctionDefs = typeof functionDefs;
 
@@ -113,6 +114,20 @@ Can also be used for the value of cryptocurrency, in which case use the three le
         },
         required: ["amount_from", "currency_from", "currency_to"]
     }
+}, {
+    name: "search",
+    description: "Search the Internet. Provides some top results, the site they are from and a basic description of the site. \
+For Reddit and StackExchange results, the first reply is provided instead.",
+    parameters: {
+        type: "object",
+        properties: {
+            query: {
+                type: "string",
+                description: "The item to search about"
+            }
+        },
+        required: ["query"]
+    }
 }] as const;
 
 const functionCalls: FunctionImpls = {
@@ -123,7 +138,8 @@ const functionCalls: FunctionImpls = {
     }),
     convert_currency: async ({ amount_from, currency_from, currency_to }) => ({
         value: await convert(`${amount_from} ${currency_from} to ${currency_to}`, true)
-    })
+    }),
+    search: async ({ query }) => ({ response: await search(query) })
 };
 
 export async function attachmentUrlToImageInput(url: string): Promise<InlineData> {
@@ -155,7 +171,13 @@ export async function prompt(
     functions: FunctionDefs[number]["name"][] | "all",
     options: PromptOptions = {}
 ): Promise<PromptResult> {
-    const { systemPrompt = undefined, maxLength = 3900, model = "gemini-2.0-flash", imageGeneration = false, history = [] } = options;
+    const { systemPrompt = undefined,
+        maxLength = 3900,
+        model = "gemini-2.0-flash",
+        imageGeneration = false,
+        history = [],
+        reasoningBudget = 0
+    } = options;
 
     const messages = [...history];
     if (content || attachments.length) {
@@ -191,7 +213,7 @@ export async function prompt(
         }
     };
     if (model.startsWith("gemini-2.5")) body.generationConfig.thinkingConfig = {
-        thinkingBudget: 0
+        thinkingBudget: reasoningBudget
     };
 
     const fns = functionDefs.filter(fn => {

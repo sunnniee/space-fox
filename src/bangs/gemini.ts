@@ -30,11 +30,12 @@ registerBang({
     execute: async (content, attachments, ctx, parameter) => {
         const params = parameter?.toLowerCase().split("") || [];
         const imageGeneration = params.includes("i");
-        let model = "gemini-2.5-flash-lite";
-        if ([PermissionTier.ME, PermissionTier.FRIENDS].includes(getPermissionTier(ctx.author, ctx.guild))
-            && !params.includes("q"))
+        let model = "gemini-2.5-flash-lite-preview-09-2025";
+        const extraPerms = [PermissionTier.ME, PermissionTier.FRIENDS]
+            .includes(getPermissionTier(ctx.author, ctx.guild));
+        if (extraPerms && !params.includes("q"))
             if (imageGeneration) model = "gemini-2.0-flash-preview-image-generation";
-            else model = "gemini-2.5-flash";
+            else model = "gemini-2.5-flash-preview-09-2025";
 
         const options: PromptOptions = {
             systemPrompt: params.includes("l")
@@ -42,7 +43,8 @@ registerBang({
                 : "You are Gemini, a large language model. Keep your responses brief and to the point. Today is "
                     + new Date().toDateString(),
             model, imageGeneration,
-            maxLength: params.includes("d") ? 3000 : 3900
+            maxLength: params.includes("d") ? 3000 : 3900,
+            reasoningBudget: /* extraPerms && */ params.includes("r") ? 2048 : 0
         };
         const response = await prompt(content, attachments, params.includes("t") ? "all" : [], options);
 

@@ -17,7 +17,7 @@ client.on("messageCreate", async msg => {
 
     const response =
         await prompt(msg.content, msg.attachments.toArray(), "all", {
-            model: "gemini-2.5-flash",
+            model: "gemini-2.5-flash-preview-09-2025",
             history: historyItem.history
         });
 
