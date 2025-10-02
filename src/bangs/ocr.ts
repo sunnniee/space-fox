@@ -35,8 +35,8 @@ registerBang({
         if (text && params?.toLowerCase().startsWith("tr")) {
             const lang = params.split("-")[1];
             const translated = (await bangs.translate.execute(text, [], undefined, lang)).content;
-            if (typeof translated === "string") {
-                text = translated;
+            if (typeof translated === "string" || translated.content) {
+                text = typeof translated === "string" ? translated : translated.content;
                 isTranslated = true;
             }
         }

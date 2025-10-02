@@ -63,7 +63,7 @@ registerBang({
     execute: async (content, _, ctx, params) => {
         const lang = params || "en";
         const fields: Record<string, any> = {};
-        const isBasic = ctx instanceof CommandInteraction || (!ctx.embeds?.length && !ctx.components?.length);
+        const isBasic = !ctx || ctx instanceof CommandInteraction || (!ctx.embeds?.length && !ctx.components?.length);
 
         if (isBasic)
             fields.content = content;
