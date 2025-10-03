@@ -2,7 +2,7 @@ import { promptHistory } from "../globals.ts";
 import { geminiResponse, prompt } from "../utils/gemini.ts";
 import { getPermissionTier, PermissionTier } from "../permissions.ts";
 import { registerBang } from "../utils/bangs.ts";
-import type { PromptOptions } from "../types.js";
+import type { PromptFunctions, PromptOptions } from "../types.js";
 
 registerBang({
     title: "Gemini",
@@ -37,6 +37,14 @@ registerBang({
             if (imageGeneration) model = "gemini-2.0-flash-preview-image-generation";
             else model = "gemini-2.5-flash-preview-09-2025";
 
+        const tools = [] as PromptFunctions;
+        if (params.includes("t")) {
+            tools.push("basic_calculator", "convert_currency", "convert_unit", "wikipedia");
+            if (extraPerms) {
+                tools.push("search");
+                if ("WOLFRAMALPHA_API_KEY" in process.env) tools.push("wolframalpha");
+            }
+        }
         const options: PromptOptions = {
             systemPrompt: params.includes("l")
                 ? undefined
@@ -46,7 +54,7 @@ registerBang({
             maxLength: params.includes("d") ? 3000 : 3900,
             reasoningBudget: /* extraPerms && */ params.includes("r") ? 2048 : 0
         };
-        const response = await prompt(content, attachments, params.includes("t") ? "all" : [], options);
+        const response = await prompt(content, attachments, tools, options);
 
         const res = geminiResponse(response, params.includes("d") ? options : undefined);
         return {

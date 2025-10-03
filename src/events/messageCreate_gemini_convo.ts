@@ -2,6 +2,7 @@ import { client, inCachedChannel } from "../client.ts";
 import { promptHistory } from "../globals.ts";
 import { geminiResponse, prompt } from "../utils/gemini.ts";
 import { getPermissionTier, PermissionTier } from "../permissions.ts";
+import type { PromptFunctions } from "../types.ts";
 
 client.on("messageCreate", async msg => {
     if (!inCachedChannel(msg)
@@ -15,8 +16,12 @@ client.on("messageCreate", async msg => {
 
     msg.channel.sendTyping();
 
+    const tools = [] as PromptFunctions;
+    tools.push("basic_calculator", "convert_currency", "convert_unit", "wikipedia", "search");
+    if ("WOLFRAMALPHA_API_KEY" in process.env) tools.push("wolframalpha");
+
     const response =
-        await prompt(msg.content, msg.attachments.toArray(), "all", {
+        await prompt(msg.content, msg.attachments.toArray(), tools, {
             model: "gemini-2.5-flash-preview-09-2025",
             history: historyItem.history
         });

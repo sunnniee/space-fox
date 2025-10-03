@@ -43,6 +43,17 @@ async function basicCalculator(input: string) {
     else return { error: "Failed to calculate" };
 }
 
+async function wolframalpha(query: string) {
+    if (!("WOLFRAMALPHA_API_KEY" in process.env)) return { result: "Failed to evaluate" };
+
+    const req = await fetch(`https://www.wolframalpha.com/api/v1/llm-api?input=${encodeURIComponent(query)}\
+&appid=${process.env.WOLFRAMALPHA_API_KEY}`);
+    const res = await req.text();
+    if (req.status !== 200 || !res) {
+        return { result: "Failed to evaluate" };
+    } else return { result: res };
+}
+
 const functionDefs = [{
     name: "wikipedia",
     description: "Search english Wikipedia on a certain topic for general information about it.",
@@ -128,6 +139,20 @@ For Reddit and StackExchange results, the first reply is provided instead.",
         },
         required: ["query"]
     }
+}, {
+    name: "wolframalpha",
+    description: "Ask a question with WolframAlpha. WolframAlpha understands natural language queries about entities in \
+chemistry, physics, geography, history, art, astronomy, and more. Only use this if the question cannot be answered by other means.",
+    parameters: {
+        type: "object",
+        properties: {
+            query: {
+                type: "string",
+                description: "A question in natural language"
+            }
+        },
+        required: ["query"]
+    }
 }] as const;
 
 const functionCalls: FunctionImpls = {
@@ -139,7 +164,8 @@ const functionCalls: FunctionImpls = {
     convert_currency: async ({ amount_from, currency_from, currency_to }) => ({
         value: await convert(`${amount_from} ${currency_from} to ${currency_to}`, true)
     }),
-    search: async ({ query }) => ({ response: await search(query) })
+    search: async ({ query }) => ({ response: await search(query) }),
+    wolframalpha: async ({ query }) => await wolframalpha(query)
 };
 
 export async function attachmentUrlToImageInput(url: string): Promise<InlineData> {
@@ -277,6 +303,7 @@ export async function prompt(
             }
         });
 
+        messages.push({ role: "model", parts: parts as any });
         return {
             response,
             history: messages
@@ -313,17 +340,20 @@ export function geminiResponse(response: PromptResult, debugInfo?: PromptOptions
             }
         }))
     });
-    if (debugInfo) container.components.push({
-        type: ComponentTypes.TEXT_DISPLAY,
-        content: `## Debug info
+
+
+    if (debugInfo) {
+        const functionCalls = response.history.map(i => i.role === "model" && "functionCall" in i.parts[0]
+            ? `\`${i.parts[0].functionCall.name}(${JSON.stringify(i.parts[0].functionCall.args)})\``
+            : undefined).filter(i => i);
+        container.components.push({
+            type: ComponentTypes.TEXT_DISPLAY,
+            content: `## Debug info
 Using model \`${debugInfo.model}\`, image generation ${debugInfo.imageGeneration ? "on" : "off"}
-Function calls:
-${
-    response.history.map(i => i.role === "model" && "functionCall" in i.parts[0]
-        ? `\`${i.parts[0].functionCall.name}(${JSON.stringify(i.parts[0].functionCall.args)})\``
-        : undefined).filter(i => i)
-}`
-    });
+Function calls: ${functionCalls.length ? `\n- ${functionCalls.join("\n- ")}` : "None"}`
+        });
+    }
+
     container.components.push({
         type: ComponentTypes.TEXT_DISPLAY,
         content: "-# AI-generated response. Gemini makes mistakes, so double-check it."

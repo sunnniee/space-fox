@@ -1,6 +1,7 @@
 import { Attachment, CommandInteraction, Message, User } from "oceanic.js";
 import type { AnyInteractionChannel, AnyTextableChannel, ApplicationCommandOptionsWithValue, ApplicationCommandOptionTypes, ApplicationCommandTypes, AutocompleteInteraction, ComponentInteraction, ComponentTypes, CreateApplicationCommandOptions, CreateMessageOptions, ModalSubmitInteraction, Uncached } from "oceanic.js";
 import type { PermissionTier } from "./permissions.ts";
+import type { prompt } from "./utils/gemini.ts";
 
 export type BangResult = {
     content: CreateMessageOptions | string;
@@ -79,6 +80,7 @@ export type PromptResult = {
     };
     history: PromptHistoryItem[];
 };
+export type PromptFunctions = Exclude<Parameters<typeof prompt>["2"], "all">;
 
 export type RemindersItem = {
     uid: string;
