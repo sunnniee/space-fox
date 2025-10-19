@@ -199,7 +199,7 @@ export async function prompt(
 ): Promise<PromptResult> {
     const { systemPrompt = undefined,
         maxLength = 3900,
-        model = "gemini-2.0-flash",
+        model = "gemini-2.5-flash",
         imageGeneration = false,
         history = [],
         reasoningBudget = 0
@@ -209,9 +209,7 @@ export async function prompt(
     if (content || attachments.length) {
         const message: PromptHistoryItem = {
             role: "user",
-            parts: [{
-                text: content
-            }]
+            parts: []
         };
 
         const fetchMedia = attachments
@@ -224,6 +222,8 @@ export async function prompt(
         media.forEach(input => {
             message.parts.push(input);
         });
+
+        if (content) message.parts.push({ text: content });
         messages.push(message);
     }
 

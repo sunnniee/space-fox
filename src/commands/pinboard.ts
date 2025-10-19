@@ -408,7 +408,10 @@ registerCommand({
                 case "generate": {
                     await ctx.defer(MessageFlags.EPHEMERAL);
                     const res = await prompt(
-                        "Generate a brief description of this image. Do not answer with anything other than the description",
+                        "Generate a brief description of this image so it can be searched later.\
+Avoid unnecessary details and use simple, casual language with common words.\
+If there is text in the image, preserve the important parts. Include a list of tags at the end.\
+Do not answer with anything other than the description.",
                         [{ url: image.link, contentType: image.type }], [],
                         {
                             model: "gemma-3-27b-it",
