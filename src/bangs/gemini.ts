@@ -32,7 +32,7 @@ registerBang({
         const imageGeneration = params.includes("i");
         let model = "gemini-2.5-flash-lite-preview-09-2025";
         const extraPerms = [PermissionTier.ME, PermissionTier.FRIENDS]
-            .includes(getPermissionTier(ctx.author, ctx.guild));
+            .includes(getPermissionTier(ctx.author, ctx.guildID));
         if (extraPerms && !params.includes("q"))
             if (imageGeneration) model = "gemini-2.0-flash-preview-image-generation";
             else model = "gemini-2.5-flash-preview-09-2025";

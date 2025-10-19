@@ -8,7 +8,7 @@ registerBang({
     execute: async (_, __, ctx) => {
         const help = Object.entries(bangsByTitle()).filter(([_, values]) =>
             bangs[values[0]].restrict
-                ? canUseBang(values[0], ctx.author, ctx.guild)
+                ? canUseBang(values[0], ctx.author, ctx.guildID)
                 : true)
             .map(([name, values]) => `${name}: \`${values.join("`, `")}\``)
             .join("\n");

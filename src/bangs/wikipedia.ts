@@ -4,14 +4,14 @@ import type { Message, MessageActionRow } from "oceanic.js";
 import { wikipedia } from "../utils/wikipedia.ts";
 import { client } from "../client.ts";
 import { purgeOldValues } from "../utils/purge.ts";
-import { registerBang } from "../utils/bangs.ts";
+import { formatAndAddLinkButton, registerBang } from "../utils/bangs.ts";
 import { ComponentHandlerTypes } from "../types.ts";
 
 const SEGMENT_MARKER = "@@segment marker@@";
 /* [(Brief), start of content 1, (Top), content 1, title 2, content 2, ...] */
 function extractSegments(text: string): string[] {
     const relevant = text.match(/<(?:p|h\d).+?<\/p>/gs);
-    if (!relevant) return [];
+    if (!relevant || !relevant.length) return [];
     let result = `(Brief)${SEGMENT_MARKER}(Top)${SEGMENT_MARKER}\n`;
     result += relevant.join("")
         .replace(/<h2.*?>(.+?)<\/h2>/gs, `${SEGMENT_MARKER}$1${SEGMENT_MARKER}`)
@@ -80,8 +80,9 @@ const wikipediaEmbed = (articleTitle: string,
     return embed.toJSON();
 };
 
+const bangTitle = "Wikipedia";
 registerBang({
-    title: "Wikipedia",
+    title: bangTitle,
     names: ["wiki", "w", "wikipedia"],
     ignoreIfBlank: true,
     takesParameters: true,
@@ -89,7 +90,7 @@ registerBang({
         en: "in English",
         fr: "in French"
     },
-    exampleQueries: ["banana", "big O notation", "The Onion", "OneShot", "job application"],
+    exampleQueries: ["banana", "big O notation", "The Onion", "Pepsiman", "job application"],
 
     componentHandlers: [{
         match: /^wikipedia:/,
@@ -114,6 +115,61 @@ registerBang({
                 embeds: [embed]
             });
         }
+    }, {
+        match: /^wikipedia-disambiguation:/,
+        type: ComponentHandlerTypes.STRING_SELECT,
+        handle: async (ctx, content) => {
+            const [, id, param] = ctx.data.customID.split(":");
+            if (ctx.user.id !== id) return ctx.deferUpdate();
+
+            // todo: DRY?
+            const result = await wikipedia(content, param.toLowerCase() || "en");
+            if (result.error) return {
+                content: {
+                    embeds: [new EmbedBuilder()
+                        .setColor(0xffffff)
+                        .setDescription(result.error)
+                        .toJSON()]
+                },
+                link: "https://en.wikipedia.org/wiki/Special:Search?go=Go&search=" + encodeURIComponent(content)
+            };
+
+            let { text } = result;
+            const { title, link, thumbnail } = result;
+            text ??= "";
+            const segments = extractSegments(text);
+
+            const titles: string[] = [], contents: string[] = [];
+            segments.forEach((s, i) => {
+                if (i % 2 === 0) titles.push(s);
+                else contents.push(s);
+            });
+            allSegments[++segmentNr] = {
+                titles,
+                contents,
+                articleTitle: title,
+                thumbnail,
+                message: ctx.message,
+                at: Date.now()
+            };
+
+            const select = new ComponentBuilder<MessageActionRow>()
+                .addSelectMenu({
+                    type: ComponentTypes.STRING_SELECT,
+                    customID: `wikipedia:${id}:${segmentNr}`,
+                    options: titles.map((t, i) => ({ label: t, value: i.toString() })).slice(0, 25)
+                })
+                .toJSON();
+
+            const { text: info, reduced } = reduce(contents[0]);
+
+            return ctx.editParent({
+                ...formatAndAddLinkButton({
+                    embeds: [wikipediaEmbed(title, "", thumbnail, info, reduced)],
+                    components: select
+                }, bangTitle, link)
+            });
+        }
     }],
 
     execute: async (content, _, ctx, parameter) => {
@@ -132,6 +188,26 @@ registerBang({
         const { title, link, thumbnail } = result;
         text ??= "";
         const segments = extractSegments(text);
+
+        if (result.isDisambiguation) {
+            const info = segments[1];
+
+            const select = new ComponentBuilder<MessageActionRow>()
+                .addSelectMenu({
+                    type: ComponentTypes.STRING_SELECT,
+                    customID: `wikipedia-disambiguation:${ctx.author.id}:${(parameter || "").substring(0, 2)}`,
+                    options: result.results.map(t => ({ label: t, value: t })).slice(0, 25)
+                })
+                .toJSON();
+
+            return {
+                content: {
+                    embeds: [wikipediaEmbed(title, "", thumbnail, info, false)],
+                    components: select
+                },
+                link
+            };
+        }
 
         const titles: string[] = [], contents: string[] = [];
         segments.forEach((s, i) => {

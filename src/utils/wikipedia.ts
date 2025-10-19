@@ -8,10 +8,11 @@ export async function wikipedia(query: string, language = "en", introOnly = fals
     const title = searchResult[1][0];
     const params = new URLSearchParams({
         action: "query",
-        prop: "extracts|pageimages",
+        prop: "extracts|pageimages|pageprops|links",
         format: "json",
         pithumbsize: "2048",
         pilimit: "1",
+        pllimit: "max",
         titles: title,
     });
     if (introOnly) params.append("exintro", "");
@@ -21,10 +22,25 @@ export async function wikipedia(query: string, language = "en", introOnly = fals
         await fetch(`https://${language}.wikipedia.org/w/api.php?${params.toString()}`)
     ).json() as any;
     const page = Object.values(article.query.pages as Record<string, any>)[0];
+
+    const isDisambiguation = "disambiguation" in page.pageprops;
+    if (isDisambiguation) {
+        const results: string[] = page.links.filter(p => p.ns === 0).map(p => p.title);
+        return {
+            title,
+            text: page.extract,
+            link: `https://${language}.wikipedia.org/wiki/${encodeURIComponent(title)}`,
+            thumbnail: null,
+            isDisambiguation: true,
+            results
+        };
+    }
+
     return {
         title,
         text: page.extract,
         thumbnail: page.thumbnail?.source,
-        link: `https://${language}.wikipedia.org/wiki/${encodeURIComponent(title)}`
+        link: `https://${language}.wikipedia.org/wiki/${encodeURIComponent(title)}`,
+        isDisambiguation: false
     };
 }

@@ -50,7 +50,7 @@ export function getBangExamples(maxCount = 3) {
     });
 }
 
-export function canUseBang(bangName: string, user: { id: string }, guild?: { id: string }) {
+export function canUseBang(bangName: string, user: string | { id: string }, guild?: string | { id: string }) {
     const bang = bangs[bangName];
     if (!bang.restrict) return true;
     const tier = getPermissionTier(user, guild);
