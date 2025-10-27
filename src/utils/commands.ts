@@ -11,11 +11,9 @@ import type { Command } from "../types.js";
 
 export const basicCommandExecute = Symbol("basicCommandExecute");
 
-function isChatInputCommand<
-    C extends ApplicationCommandTypes,
-    O extends readonly ApplicationCommandOptionsWithValue[]
-// @ts-expect-error Type 'Command<ApplicationCommandTypes.CHAT_INPUT, O>' is not assignable to type 'Command<C, O>'.
->(command: Command<C, O>): command is Command<typeof ApplicationCommandTypes.CHAT_INPUT, O> {
+function isChatInputCommand<O extends readonly ApplicationCommandOptionsWithValue[]>(
+    command: Command<ApplicationCommandTypes, O>
+): command is Command<ApplicationCommandTypes.CHAT_INPUT, O> {
     return command.type === ApplicationCommandTypes.CHAT_INPUT;
 }
 function isChatInputCommandOptions(command: CreateApplicationCommandOptions):
@@ -24,38 +22,52 @@ function isChatInputCommandOptions(command: CreateApplicationCommandOptions):
 }
 
 export function registerCommand<
-    const C extends ApplicationCommandTypes,
     const O extends readonly ApplicationCommandOptionsWithValue[]
 >(
-    command: Command<C, O>
+    command: Command<ApplicationCommandTypes, O>
 ): void {
     if (command.predicate && !command.predicate()) {
         if (!process.env.SUPPRESS_WARNINGS) console.warn(`Skipping command ${command.name} as predicate failed`);
         return;
     }
-    const cmd = command as CreateApplicationCommandOptions;
-    cmd.integrationTypes = [ApplicationIntegrationTypes.GUILD_INSTALL, ApplicationIntegrationTypes.USER_INSTALL];
-    cmd.contexts = [InteractionContextTypes.BOT_DM,
-        InteractionContextTypes.GUILD,
-        InteractionContextTypes.PRIVATE_CHANNEL];
+    const cmd: CreateApplicationCommandOptions = isChatInputCommand(command)
+        ? {
+            type: command.type,
+            name: command.name,
+            description: command.description,
+            options: command.options ? [...command.options] : undefined,
+            integrationTypes: [ApplicationIntegrationTypes.GUILD_INSTALL, ApplicationIntegrationTypes.USER_INSTALL],
+            contexts: [
+                InteractionContextTypes.BOT_DM,
+                InteractionContextTypes.GUILD,
+                InteractionContextTypes.PRIVATE_CHANNEL
+            ]
+        }
+        : {
+            type: command.type,
+            name: command.name,
+            integrationTypes: [ApplicationIntegrationTypes.GUILD_INSTALL, ApplicationIntegrationTypes.USER_INSTALL],
+            contexts: [
+                InteractionContextTypes.BOT_DM,
+                InteractionContextTypes.GUILD,
+                InteractionContextTypes.PRIVATE_CHANNEL
+            ]
+        };
+
     let isSubcommand = false;
 
-    if (isChatInputCommandOptions(cmd)
-        && isChatInputCommand(command)
-        && command.name.includes(" ")) {
+    if (isChatInputCommand(command) && isChatInputCommandOptions(cmd) && command.name.includes(" ")) {
         isSubcommand = true;
 
         const [name, subcommand, extra] = command.name.split(" ");
         if (extra) return console.error("Invalid command name " + command.name);
 
         cmd.name = name;
-        // @ts-expect-error always fine for a subcommand
         cmd.options = [{
             name: subcommand,
             description: command.description,
             type: ApplicationCommandOptionTypes.SUB_COMMAND,
-            // @ts-expect-error always fine for a subcommand
-            options: command.options
+            options: command.options ? [...command.options] : undefined
         }] satisfies ApplicationCommandOptionsWithOptions[];
     }
 
@@ -89,10 +101,15 @@ export function registerCommand<
         }
         commands.splice(existingIndex, 1, existing);
     } else {
-        const newCommand = command as unknown as typeof commands[0];
-        newCommand.execute = { [basicCommandExecute]: command.execute };
-        if (isChatInputCommandOptions(cmd) && isChatInputCommand(command) && newCommand.autocomplete)
+        const newCommand: typeof commands[0] = {
+            ...cmd,
+            execute: { [basicCommandExecute]: command.execute },
+            componentHandlers: command.componentHandlers || []
+        };
+
+        if (isChatInputCommand(command) && command.autocomplete) {
             newCommand.autocomplete = { [basicCommandExecute]: command.autocomplete };
+        }
 
         commands.push(newCommand);
         if (command.componentHandlers?.length) allComponentHandlers.push(...command.componentHandlers);
