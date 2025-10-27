@@ -210,7 +210,6 @@ registerCommand({
 registerCommand({
     name: "reminders list",
     type: ApplicationCommandTypes.CHAT_INPUT,
-    globalDescription: "Set a reminder",
     description: "List existing reminders",
     execute: async ctx => {
         const reminderList = reminders.get(ctx.user.id) || [];
@@ -234,7 +233,6 @@ registerCommand({
 registerCommand({
     name: "reminders delete",
     type: ApplicationCommandTypes.CHAT_INPUT,
-    globalDescription: "Set a reminder",
     description: "Delete a reminder",
     options: [{
         name: "id",

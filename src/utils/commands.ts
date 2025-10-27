@@ -9,6 +9,8 @@ import type {
 import { allComponentHandlers, commands } from "../globals.ts";
 import type { Command } from "../types.js";
 
+export const basicCommandExecute = Symbol("basicCommandExecute");
+
 function isChatInputCommand<
     C extends ApplicationCommandTypes,
     O extends readonly ApplicationCommandOptionsWithValue[]
@@ -40,8 +42,7 @@ export function registerCommand<
 
     if (isChatInputCommandOptions(cmd)
         && isChatInputCommand(command)
-        && command.globalDescription && command.name.includes(" ")) {
-        cmd.description = command.globalDescription;
+        && command.name.includes(" ")) {
         isSubcommand = true;
 
         const [name, subcommand, extra] = command.name.split(" ");
@@ -67,15 +68,18 @@ export function registerCommand<
             || !isChatInputCommandOptions(existing)) return; // never
 
         existing.options.push(...cmd.options as ApplicationCommandOptionsWithOptions[]);
-        if (typeof existing.execute === "function") existing.execute = {
-            [existing.options[0].name]: existing.execute
-        };
+
+        if (existing.execute[basicCommandExecute]) {
+            existing.execute[existing.options[0].name] = existing.execute[basicCommandExecute];
+            delete existing.execute[basicCommandExecute];
+        }
         existing.execute[cmd.options[0].name] = command.execute;
 
         if (command.autocomplete) {
-            if (typeof existing.autocomplete === "function") existing.autocomplete = {
-                [existing.options[0].name]: existing.autocomplete
-            };
+            if (existing.autocomplete[basicCommandExecute]) {
+                existing.autocomplete[existing.options[0].name] = existing.autocomplete[basicCommandExecute];
+                delete existing.autocomplete[basicCommandExecute];
+            }
             existing.autocomplete[cmd.options[0].name] = command.autocomplete;
         }
 
@@ -85,12 +89,13 @@ export function registerCommand<
         }
         commands.splice(existingIndex, 1, existing);
     } else {
-        commands.push(Object.assign(cmd, {
-            execute: command.execute,
-            componentHandlers: command.componentHandlers || []
-        }));
-        if (command.componentHandlers) allComponentHandlers.push(...command.componentHandlers);
+        const newCommand = command as unknown as typeof commands[0];
+        newCommand.execute = { [basicCommandExecute]: command.execute };
+        if (isChatInputCommandOptions(cmd) && isChatInputCommand(command) && newCommand.autocomplete)
+            newCommand.autocomplete = { [basicCommandExecute]: command.autocomplete };
 
+        commands.push(newCommand);
+        if (command.componentHandlers?.length) allComponentHandlers.push(...command.componentHandlers);
     }
 }
 

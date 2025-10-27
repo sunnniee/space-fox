@@ -115,7 +115,6 @@ export interface ChatInputCommand<
     name: string;
     type: C;
     description: string;
-    globalDescription?: string;
     predicate?: () => boolean;
     options?: O;
     execute: (ctx: CommandInteraction<AnyInteractionChannel | Uncached, C>, ...args: OptionsToArgs<O>) => Promise<any>;
@@ -142,7 +141,7 @@ export type Command<C extends ApplicationCommandTypes, O extends readonly Applic
 
 export type ExecuteFn = (...args: any[]) => Promise<any>;
 export type CommandList = (CreateApplicationCommandOptions & {
-    execute: ExecuteFn | Record<string, ExecuteFn>;
+    execute: Record<string | symbol, ExecuteFn>;
     componentHandlers: ComponentHandler[];
-    autocomplete?: ExecuteFn | Record<string, ExecuteFn>;
+    autocomplete?: Record<string | symbol, ExecuteFn>;
 })[];

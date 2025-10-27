@@ -1,7 +1,7 @@
 import { MessageFlags } from "oceanic.js";
 import { client } from "../client.ts";
 import { allComponentHandlers, commands } from "../globals.ts";
-import { handleError } from "../utils/commands.ts";
+import { basicCommandExecute, handleError } from "../utils/commands.ts";
 import { ComponentHandlerTypes } from "../types.ts";
 
 client.on("interactionCreate", async ctx => {
@@ -18,8 +18,8 @@ client.on("interactionCreate", async ctx => {
                 if (subcommand)
                     return cmd.execute[subcommand](ctx, ...input)
                         .catch(e => handleError(ctx, e, MessageFlags.EPHEMERAL));
-                // @ts-expect-error only an object if the command has subcommands
-                else return cmd.execute(ctx, ...input).catch(e => handleError(ctx, e, MessageFlags.EPHEMERAL));
+                else return cmd.execute[basicCommandExecute](ctx, ...input)
+                    .catch(e => handleError(ctx, e, MessageFlags.EPHEMERAL));
             }
         });
     } else if (ctx.isAutocompleteInteraction()) {
@@ -33,8 +33,7 @@ client.on("interactionCreate", async ctx => {
 
                 if (subcommand?.[0])
                     return cmd.autocomplete[subcommand[0]](ctx, ...input);
-                // @ts-expect-error only an object if the command has subcommands
-                else return cmd.autocomplete(ctx, ...input);
+                else return cmd.autocomplete[basicCommandExecute](ctx, ...input);
             }
         });
     } else if (ctx.isComponentInteraction() || ctx.isModalSubmitInteraction()) {
