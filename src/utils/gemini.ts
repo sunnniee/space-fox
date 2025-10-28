@@ -129,7 +129,8 @@ Can also be used for the value of cryptocurrency, in which case use the three le
 }, {
     name: "search",
     description: "Search the Internet. Provides some top results, the site they are from and a basic description of the site. \
-For Reddit and StackExchange results, the first reply is provided instead.",
+For Reddit and StackExchange results, the first reply is provided instead. Use this like a search engine, where the query \
+primarily consists of keywords.",
     parameters: {
         type: "object",
         properties: {
@@ -255,9 +256,7 @@ export async function prompt(
         body.tools = [{ functionDeclarations: fns }];
         body.toolConfig = {
             functionCallingConfig: {
-                mode: "VALIDATED",
-                allowedFunctionNames: concurrentQueryFunctionDefs
-                    .filter(n => fns.find(f => f.name === n))
+                mode: "VALIDATED"
             }
         };
     }
@@ -284,12 +283,40 @@ export async function prompt(
         };
 
         if (parts?.[0]?.functionCall) {
+            const concurrentCalls: typeof parts = [];
+            const sequentialCalls: typeof parts = [];
+
             for (const part of parts) {
                 if (!part.functionCall) {
-                    console.log("Unexpected part in function calls\n", parts);
+                    console.log("Unexpected part in function calls\n", part);
                     continue;
                 }
-                const call = part.functionCall;
+                if (concurrentQueryFunctionDefs.includes(part.functionCall.name as any))
+                    concurrentCalls.push(part);
+                else
+                    sequentialCalls.push(part);
+            }
+
+            if (concurrentCalls.length > 0) {
+                const promises = concurrentCalls.map(part => {
+                    const call = part.functionCall!;
+                    const fn = functionDefs.find(f => f.name === call.name)!;
+                    return functionCalls[fn.name](call.args);
+                });
+
+                const results = await Promise.all(promises);
+
+                for (let i = 0; i < concurrentCalls.length; i++) {
+                    const part = concurrentCalls[i];
+                    const result = results[i];
+                    const fnName = part.functionCall!.name;
+                    messages.push({ role: "model", parts: [part as any] });
+                    messages.push({ role: "user", parts: [{ functionResponse: { name: fnName, response: result } }] });
+                }
+            }
+
+            for (const part of sequentialCalls) {
+                const call = part.functionCall!;
                 const fn = functionDefs.find(f => f.name === call.name);
                 if (fn) {
                     const res = await functionCalls[fn.name](call.args);
@@ -297,6 +324,7 @@ export async function prompt(
                     messages.push({ role: "user", parts: [{ functionResponse: { name: fn.name, response: res } }] });
                 }
             }
+
             return prompt("", [], functions, { ...options, history: messages });
         }
 
