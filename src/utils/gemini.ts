@@ -5,6 +5,7 @@ import type { InlineData, PromptHistoryItem, PromptOptions, PromptResult } from 
 import { convert } from "./convert.ts";
 import { wikipedia } from "./wikipedia.ts";
 import { search } from "./search.ts";
+import { convertCurrency } from "./convertcurrency.ts";
 
 type FunctionDefs = typeof functionDefs;
 
@@ -111,7 +112,7 @@ Can also be used for the value of cryptocurrency, in which case use the three le
         type: "object",
         properties: {
             amount_from: {
-                type: "string",
+                type: "number",
                 description: "The amount to convert from"
             },
             currency_from: {
@@ -166,9 +167,8 @@ const functionCalls: FunctionImpls = {
     convert_unit: async ({ amount_from, unit_from, unit_to }) => ({
         value: await convert(`${amount_from} ${unit_from} to ${unit_to}`, true)
     }),
-    convert_currency: async ({ amount_from, currency_from, currency_to }) => ({
-        value: await convert(`${amount_from} ${currency_from} to ${currency_to}`, true)
-    }),
+    convert_currency: async ({ amount_from, currency_from, currency_to }) =>
+        await convertCurrency(amount_from, currency_from, currency_to),
     search: async ({ query }) => ({ response: await search(query) }),
     wolframalpha: async ({ query }) => await wolframalpha(query)
 };
