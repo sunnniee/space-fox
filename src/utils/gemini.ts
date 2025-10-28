@@ -284,7 +284,6 @@ export async function prompt(
         };
 
         if (parts?.[0]?.functionCall) {
-            console.log(parts);
             for (const part of parts) {
                 if (!part.functionCall) {
                     console.log("Unexpected part in function calls\n", parts);
@@ -294,7 +293,7 @@ export async function prompt(
                 const fn = functionDefs.find(f => f.name === call.name);
                 if (fn) {
                     const res = await functionCalls[fn.name](call.args);
-                    messages.push({ role: "model", parts: [{ functionCall: call }] });
+                    messages.push({ role: "model", parts: [part as any] });
                     messages.push({ role: "user", parts: [{ functionResponse: { name: fn.name, response: res } }] });
                 }
             }
