@@ -105,8 +105,8 @@ force, frequency, length, mass, power, pressure, speed, temperature or volume. Y
     }
 }, {
     name: "convert_currency",
-    description: 'Converts the value of one currency to another. Use the full name of the country of origin (ex "United States dollar"). \
-Can also be used for the value of cryptocurrency, in which case use the three letter short name (ex. BTC, XMR).',
+    description: "Converts the value of one currency to another. Use the short form name of the currency (ex. USD, XAU). \
+Can also be used for the value of cryptocurrency, in which case use the three letter short name (ex. BTC, XMR).",
     parameters: {
         type: "object",
         properties: {
@@ -154,6 +154,11 @@ chemistry, physics, geography, history, art, astronomy, and more. Only use this 
         required: ["query"]
     }
 }] as const;
+const concurrentQueryFunctionDefs = [
+    "basic_calculator",
+    "wikipedia",
+    "convert_currency"
+] as FunctionDefs[number]["name"][];
 
 const functionCalls: FunctionImpls = {
     wikipedia: ({ query }) => wikipedia(query, "en", false, true),
@@ -246,7 +251,16 @@ export async function prompt(
         if (functions === "all") return true;
         else return functions.includes(fn.name);
     });
-    if (fns.length) body.tools = [{ functionDeclarations: fns }];
+    if (fns.length) {
+        body.tools = [{ functionDeclarations: fns }];
+        body.toolConfig = {
+            functionCallingConfig: {
+                mode: "VALIDATED",
+                allowedFunctionNames: concurrentQueryFunctionDefs
+                    .filter(n => fns.find(f => f.name === n))
+            }
+        };
+    }
 
     return await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent\
 ?key=${process.env.GEMINI_API_KEY}`, {
@@ -270,15 +284,21 @@ export async function prompt(
         };
 
         if (parts?.[0]?.functionCall) {
-            const call = parts[0].functionCall;
-            const fn = functionDefs.find(f => f.name === call.name);
-            if (fn) {
-                const res = await functionCalls[fn.name](call.args);
-                messages.push({ role: "model", parts: [{ functionCall: call }] });
-                messages.push({ role: "user", parts: [{ functionResponse: { name: fn.name, response: res } }] });
-
-                return prompt("", [], functions, { ...options, history: messages });
+            console.log(parts);
+            for (const part of parts) {
+                if (!part.functionCall) {
+                    console.log("Unexpected part in function calls\n", parts);
+                    continue;
+                }
+                const call = part.functionCall;
+                const fn = functionDefs.find(f => f.name === call.name);
+                if (fn) {
+                    const res = await functionCalls[fn.name](call.args);
+                    messages.push({ role: "model", parts: [{ functionCall: call }] });
+                    messages.push({ role: "user", parts: [{ functionResponse: { name: fn.name, response: res } }] });
+                }
             }
+            return prompt("", [], functions, { ...options, history: messages });
         }
 
         const response = {
