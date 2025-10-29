@@ -22,7 +22,7 @@ client.on("messageCreate", async msg => {
     const matchOutput = msg.content.match(bangRegex);
     if (matchOutput) {
         const [_, origContent, bangUsed] = matchOutput;
-        const [bangName, ...parameters] = bangUsed.split("-");
+        const [bangName, ...parameters] = bangUsed!.split("-");
         if (parameters.length > 1) return;
 
         const parameter = parameters[0];
@@ -41,7 +41,7 @@ client.on("messageCreate", async msg => {
         const ctx = (input?.message || msg.referencedMessage || msg) as Message<AnyTextableChannel>;
         if (!ctx.guild) Object.defineProperty(ctx, "guild", { value: msg.guild });
 
-        const bang = bangs[bangName];
+        const bang = bangs[bangName!];
         if (!bang) return;
         else if (!canUseBang(bang.names[0], msg.author, msg.guild)) return;
         else if (!content && !attachments.length && bang.ignoreIfBlank) return;

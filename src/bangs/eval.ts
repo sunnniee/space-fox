@@ -46,6 +46,10 @@ registerBang({
 
                 return { content: "```js\n" + result + "```" };
             }).catch(e => { return { content: reportError(e) }; });
-        } catch (e) { return { content: reportError(e) }; }
+        } catch (e) {
+            if (e instanceof Error)
+                return { content: reportError(e) };
+            return { content: "this should definitely not be here" };
+        }
     }
 });

@@ -62,9 +62,9 @@ export function registerCommand<
         const [name, subcommand, extra] = command.name.split(" ");
         if (extra) return console.error("Invalid command name " + command.name);
 
-        cmd.name = name;
+        cmd.name = name!;
         cmd.options = [{
-            name: subcommand,
+            name: subcommand!,
             description: command.description,
             type: ApplicationCommandOptionTypes.SUB_COMMAND,
             options: command.options ? [...command.options] : undefined
@@ -74,10 +74,12 @@ export function registerCommand<
     const existingIndex = commands.findIndex(c => c.name === cmd.name);
     if (existingIndex !== -1) {
         if (!isSubcommand) return console.error("Duplicate command " + command.name);
-        const existing = commands[existingIndex];
+        const existing = commands[existingIndex]!;
         if (!isChatInputCommandOptions(cmd)
             || !isChatInputCommand(command)
-            || !isChatInputCommandOptions(existing)) return; // never
+            || !isChatInputCommandOptions(existing)
+            || !cmd.options?.[0]
+            || !existing.options?.[0]) return; // never
 
         existing.options.push(...cmd.options as ApplicationCommandOptionsWithOptions[]);
 
@@ -87,7 +89,7 @@ export function registerCommand<
         }
         existing.execute[cmd.options[0].name] = command.execute;
 
-        if (command.autocomplete) {
+        if (command.autocomplete && existing.autocomplete) {
             if (existing.autocomplete[basicCommandExecute]) {
                 existing.autocomplete[existing.options[0].name] = existing.autocomplete[basicCommandExecute];
                 delete existing.autocomplete[basicCommandExecute];

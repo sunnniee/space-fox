@@ -40,10 +40,10 @@ registerBang({
                     .setAuthor(def.word)
                     .setDescription(`
 ${def.definition.replace(/\[(.+?)\]/gm,
-    (_, t) => `[${t}](https://www.urbandictionary.com/define.php?term=${encodeURIComponent(t)})`)}
+    (_: string, t: string) => `[${t}](https://www.urbandictionary.com/define.php?term=${encodeURIComponent(t)})`)}
 
 *${def.example.replace(/\[(.+?)\]/gm,
-    (_, t) => `[${t}](https://www.urbandictionary.com/define.php?term=${encodeURIComponent(t)})`)}*`)
+    (_: string, t: string) => `[${t}](https://www.urbandictionary.com/define.php?term=${encodeURIComponent(t)})`)}*`)
                     .toJSON()]
             },
             link: "https://www.urbandictionary.com/define.php?term=" + encodeURIComponent(def.word)

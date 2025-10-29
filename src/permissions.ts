@@ -44,12 +44,15 @@ try {
     else console.error("Failed to parse permissions.json file");
 }
 
-export function getPermissionTier(user: { id: string } | string, guild?: { id: string } | string): PermissionTier {
+export function getPermissionTier(
+    user: { id: string } | string,
+    guild?: { id: string } | string | null
+): PermissionTier {
     if (typeof user === "object") user = user.id;
     if (typeof guild === "object") guild = guild?.id;
     for (const [tier, members] of Object.entries(groups)) {
         if ((members as PermissionGroupItem).users?.includes(user)
-            || (members as PermissionGroupItem).guilds?.includes(guild)
+            || (guild && (members as PermissionGroupItem).guilds?.includes(guild))
         )
             return tier as PermissionTier;
     }

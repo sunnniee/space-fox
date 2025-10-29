@@ -44,7 +44,7 @@ registerBang({
             };
         }
         const [_, link, titleTextHtml] = match2;
-        const titleText = titleTextHtml.replace(/&#(\d+);/g, (_, code) => String.fromCharCode(code));
+        const titleText = titleTextHtml!.replace(/&#(\d+);/g, (_, code) => String.fromCharCode(code));
         return {
             content: {
                 embeds: [new EmbedBuilder()

@@ -25,7 +25,7 @@ export async function wikipedia(query: string, language = "en", introOnly = fals
 
     const isDisambiguation = "disambiguation" in page.pageprops;
     if (isDisambiguation) {
-        const results: string[] = page.links.filter(p => p.ns === 0).map(p => p.title);
+        const results: string[] = page.links.filter((p: any) => p.ns === 0).map((p: any) => p.title);
         return {
             title,
             text: page.extract,

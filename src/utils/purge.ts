@@ -7,7 +7,7 @@ export function purgeOldValues<T extends { at: number }>(obj: Record<any, T>,
     purgeHandlers.push(() => {
         for (const [k, { at }] of Object.entries(obj)) {
             if (Date.now() - at > after) {
-                if (sideEffect) sideEffect(obj[k]);
+                if (sideEffect) sideEffect(obj[k]!);
                 delete obj[k];
             }
         }

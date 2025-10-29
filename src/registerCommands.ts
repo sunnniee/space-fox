@@ -13,7 +13,7 @@ client.on("ready", () => {
     // horrible
     setTimeout(async () => {
         await client.application.bulkEditGlobalCommands(commands.map(c => {
-            const cmd = { ...c };
+            const cmd = { ...c } as any;
             delete cmd.execute;
             delete cmd.componentHandlers;
             delete cmd.autocomplete;

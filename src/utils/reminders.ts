@@ -27,7 +27,7 @@ export function checkReminders() {
         const allReminders = reminders.getAll();
 
         for (const userID in allReminders) {
-            const reminderList = allReminders[userID];
+            const reminderList = allReminders[userID]!;
             const remindersToSend = reminderList.filter(r => r.at <= Date.now());
             const remindersToKeep = reminderList.filter(r => r.at > Date.now());
             if (remindersToSend.length === 0) continue;

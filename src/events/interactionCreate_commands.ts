@@ -23,15 +23,15 @@ client.on("interactionCreate", async ctx => {
                 }).filter(v => v !== null);
 
                 if (subcommand)
-                    return await cmd.execute[subcommand](ctx, ...input)
+                    return await cmd.execute[subcommand]!(ctx, ...input)
                         .catch(e => handleError(ctx, e, MessageFlags.EPHEMERAL));
-                else return await cmd.execute[basicCommandExecute](ctx, ...input)
+                else return await cmd.execute[basicCommandExecute]!(ctx, ...input)
                     .catch(e => handleError(ctx, e, MessageFlags.EPHEMERAL));
             }
         });
     } else if (ctx.isAutocompleteInteraction()) {
         commands.forEach(async cmd => {
-            if (cmd.type === ctx.data.type && cmd.name === ctx.data.name) {
+            if (cmd.type === ctx.data.type && cmd.name === ctx.data.name && cmd.autocomplete) {
                 const subcommand = ctx.data.options.getSubCommand();
                 const input = ctx.data.options.raw.flatMap(v => {
                     if (subcommand) {
@@ -47,8 +47,8 @@ client.on("interactionCreate", async ctx => {
                 }).filter(v => v !== null);
 
                 if (subcommand?.[0])
-                    return await cmd.autocomplete[subcommand[0]](ctx, ...input);
-                else return await cmd.autocomplete[basicCommandExecute](ctx, ...input);
+                    return await cmd.autocomplete[subcommand[0]]!(ctx, ...input);
+                else return await cmd.autocomplete[basicCommandExecute]!(ctx, ...input);
             }
         });
     } else if (ctx.isModalSubmitInteraction()) {
@@ -70,7 +70,7 @@ client.on("interactionCreate", async ctx => {
                     && ctx.isSelectMenuComponentInteraction()
                     && ctx.data.componentType === ComponentTypes.STRING_SELECT
                 ) {
-                    return await handler.handle(ctx, ctx.data.values.raw[0])
+                    return await handler.handle(ctx, ctx.data.values.raw[0]!)
                         .catch(e => handleError(ctx, e, MessageFlags.EPHEMERAL));
                 }
             }

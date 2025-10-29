@@ -3,9 +3,9 @@ import type { CreateMessageOptions } from "oceanic.js";
 
 import { allComponentHandlers, bangs } from "../globals.ts";
 import { getPermissionTier } from "../permissions.ts";
-import type { Bang } from "../types.js";
+import type { Bang, NonEmptyArray } from "../types.js";
 
-let titleList = {} as Record<string, string[]>;
+let titleList = {} as Record<string, NonEmptyArray<string>>;
 let setTitleList = false;
 
 const exampleList = {} as Record<string, { name: string; examples: string[] }>;
@@ -15,7 +15,7 @@ export function bangsByTitle() {
     if (!setTitleList) {
         Object.entries(bangs).forEach(([name, bang]) => {
             if (!titleList[bang.title]) titleList[bang.title] = [name];
-            else titleList[bang.title].push(name);
+            else titleList[bang.title]!.push(name);
         });
         setTitleList = true;
         titleList = Object.fromEntries(Object.entries(titleList).sort(([n1], [n2]) => n1 < n2 ? -1 : 1));
@@ -38,6 +38,7 @@ export function getBangExamples(maxCount = 3) {
     const entries = Object.entries(exampleList);
     for (let i = entries.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
+        // @ts-expect-error cba to add useless null checks
         [entries[i], entries[j]] = [entries[j], entries[i]];
     }
 
@@ -50,16 +51,16 @@ export function getBangExamples(maxCount = 3) {
     });
 }
 
-export function canUseBang(bangName: string, user: string | { id: string }, guild?: string | { id: string }) {
-    const bang = bangs[bangName];
+export function canUseBang(bangName: string, user: string | { id: string }, guild?: string | { id: string } | null) {
+    const bang = bangs[bangName]!;
     if (!bang.restrict) return true;
-    const tier = getPermissionTier(user, guild);
+    const tier = getPermissionTier(user, guild || undefined);
     return bang.restrict.includes(tier);
 }
 
 export function formatAndAddLinkButton(content: string | CreateMessageOptions,
     title: string,
-    link: string): CreateMessageOptions {
+    link?: string): CreateMessageOptions {
     if (typeof content === "string") content = { content: content };
     if (link) {
         content.components ??= [];

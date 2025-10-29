@@ -22,7 +22,7 @@ registerBang({
             }
         };
 
-        const img = await attachmentUrlToImageInput(imgs[0].url);
+        const img = await attachmentUrlToImageInput(imgs[0]!.url);
         const res = await ocr(Buffer.from(img.data, "base64"));
         if (!res) return {
             content: {
@@ -32,11 +32,12 @@ registerBang({
 
         let text = res.content;
         let isTranslated = false;
-        if (text && params?.toLowerCase().startsWith("tr")) {
+        if (text && params?.toLowerCase().startsWith("tr") && bangs.translate) {
             const lang = params.split("-")[1];
-            const translated = (await bangs.translate.execute(text, [], undefined, lang)).content;
+            // TODO: move to util fuction instead of calling bang
+            const translated = (await bangs.translate.execute(text, [], undefined as any, lang)).content;
             if (typeof translated === "string" || translated.content) {
-                text = typeof translated === "string" ? translated : translated.content;
+                text = typeof translated === "string" ? translated : translated.content!;
                 isTranslated = true;
             }
         }

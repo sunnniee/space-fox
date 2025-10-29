@@ -67,7 +67,7 @@ ${pin.content.media?.map(i => i.description || "")?.join("\n") || ""}
 ${pin.content.components?.map(c => c.label || "")?.join("\n") || ""}`.trim();
 }
 
-function extractContentFromEmbed(embed: Embed) {
+function extractContentFromEmbed(embed: Embed | undefined) {
     if (!embed) return undefined;
     const text = `${embed.author?.name ? `### ${embed.author.name}` : ""}
 ${embed.title ? `# ${embed.title}` : ""}
@@ -153,7 +153,7 @@ function makePinboardMessage(pin: PinboardItem, userId: string, id: number, idsL
                 customID: `pinboard-manage-${id}-${userId}`,
                 style: ButtonStyles.SECONDARY,
                 label: "Edit image descriptions",
-                disabled: !pin.content.media.length
+                disabled: !pin.content.media?.length
             }, {
                 type: ComponentTypes.BUTTON,
                 customID: `pinboard-delete-${id}-${userId}`,
@@ -223,10 +223,10 @@ registerCommand({
             if (res.length >= 10) res.length = 10;
             ids.push(...res.map(r => r.item.id));
         }
-        if (!ids.length) ids.push(pinboard.pins.at(-1).id);
-        const pin = pinboard.pins.find(p => p.id === ids[0]);
+        if (!ids.length) ids.push(pinboard.pins.at(-1)!.id);
+        const pin = pinboard.pins.find(p => p.id === ids[0])!;
 
-        ctx.reply(makePinboardMessage(pin, ctx.user.id, ids[0], [], ids.slice(1),
+        ctx.reply(makePinboardMessage(pin, ctx.user.id, ids[0]!, [], ids.slice(1),
             !search || search === "" ? { left: true, right: pinboard.pins.length === 1 } : undefined));
     },
     componentHandlers: [{
@@ -239,14 +239,14 @@ registerCommand({
 
             const id = Number(idStr);
             let all = false;
-            let nextId: number = undefined;
+            let nextId: number | undefined = undefined;
             let left = [] as number[];
             let right = [] as number[];
 
             if (direction === "left") {
                 if (leftStr === "all") {
                     const index = pinboard.pins.findIndex(p => p.id === id);
-                    if (index !== pinboard.pins.length - 1) nextId = pinboard.pins[index + 1].id;
+                    if (index !== pinboard.pins.length - 1) nextId = pinboard.pins[index + 1]!.id;
                     else return ctx.reply({
                         content: "There's nothing there..",
                         flags: MessageFlags.EPHEMERAL
@@ -265,7 +265,7 @@ registerCommand({
             } else if (direction === "right") {
                 if (rightStr === "all") {
                     const index = pinboard.pins.findIndex(p => p.id === id);
-                    if (index !== 0) nextId = pinboard.pins[index - 1].id;
+                    if (index !== 0) nextId = pinboard.pins[index - 1]!.id;
                     else return ctx.reply({
                         content: "There's nothing there..",
                         flags: MessageFlags.EPHEMERAL
@@ -288,7 +288,8 @@ registerCommand({
                 flags: MessageFlags.EPHEMERAL
             });
 
-            const nextPin = pinboard.pins.find(p => p.id === nextId), nextIndex = pinboard.pins.indexOf(nextPin);
+            const nextPin = pinboard.pins.find(p => p.id === nextId)!,
+                nextIndex = pinboard.pins.indexOf(nextPin);
             ctx.editParent(
                 makePinboardMessage(nextPin, userId, nextId, left, right,
                     all ? {
@@ -305,7 +306,7 @@ registerCommand({
             const [, , id, userId] = ctx.data.customID.split("-");
             if (ctx.user.id !== userId) return ctx.deferUpdate();
             const pinboard = allPinboards.get(ctx.user.id, true);
-            const pin = pinboard.pins.find(p => p.id === Number(id));
+            const pin = pinboard.pins.find(p => p.id === Number(id))!;
 
             if (!pin.content.media?.length) return ctx.reply({
                 content: "how did you even get here",
@@ -320,8 +321,8 @@ registerCommand({
                         type: ComponentTypes.STRING_SELECT,
                         customID: `pinboard-select-${id}`,
                         options: pin.content.media!.map((img, i) => ({
-                            label: `Image #${i + 1} - ${img.description?.length > 75
-                                ? img.description.slice(0, 75) + "..."
+                            label: `Image #${i + 1} - ${img.description?.length! > 75
+                                ? img.description!.slice(0, 75) + "..."
                                 : img.description || "[no description]"}`,
                             value: i.toString()
                         }))
@@ -336,8 +337,12 @@ registerCommand({
         handle: async (ctx, pos) => {
             const [, , id] = ctx.data.customID.split("-");
             const pinboard = allPinboards.get(ctx.user.id, true);
-            const pin = pinboard.pins.find(p => p.id === Number(id));
+            const pin = pinboard.pins.find(p => p.id === Number(id))!;
             const image = pin.content.media!.at(Number(pos));
+            if (!image) return ctx.reply({
+                content: "how did you even get here",
+                flags: MessageFlags.EPHEMERAL
+            });
 
             if (image.type.startsWith("video/"))
                 return await descriptionModal(ctx, pin, Number(pos),
@@ -378,9 +383,13 @@ registerCommand({
         handle: async (ctx, option) => {
             const [, , id, pos] = ctx.data.customID.split("-");
             const pinboard = allPinboards.get(ctx.user.id, true);
-            const pin = pinboard.pins.find(p => p.id === Number(id));
+            const pin = pinboard.pins.find(p => p.id === Number(id))!;
             const index = pinboard.pins.indexOf(pin);
             const image = pin.content.media!.at(Number(pos));
+            if (!image) return ctx.reply({
+                content: "how did you even get here",
+                flags: MessageFlags.EPHEMERAL
+            });
 
             switch (option) {
                 case "write": {
@@ -441,7 +450,7 @@ Do not answer with anything other than the description.",
         handle: async (ctx, description) => {
             const [, , id, pos] = ctx.data.customID.split("-");
             const pinboard = allPinboards.get(ctx.user.id, true);
-            const pin = pinboard.pins.find(p => p.id === Number(id));
+            const pin = pinboard.pins.find(p => p.id === Number(id))!;
             const index = pinboard.pins.indexOf(pin);
 
             pin.content.media!.at(Number(pos))!.description = description;

@@ -1,7 +1,7 @@
 import { ComponentTypes, MessageFlags } from "oceanic.js";
 import type { CreateMessageOptions, MessageComponent } from "oceanic.js";
 
-import type { InlineData, PromptHistoryItem, PromptOptions, PromptResult } from "../types.ts";
+import type { InlineData, PromptHistoryItem, PromptHistoryItemModelParts, PromptOptions, PromptResult } from "../types.ts";
 import { convert } from "./convert.ts";
 import { wikipedia } from "./wikipedia.ts";
 import { search } from "./search.ts";
@@ -269,11 +269,7 @@ export async function prompt(
         },
         body: JSON.stringify(body)
     }).then(res => res.json().then(async res => {
-        const parts = (res as any)?.candidates?.[0]?.content?.parts as {
-            text?: string;
-            inlineData?: { mimeType: string; data: string };
-            functionCall?: { name: string; args: any };
-        }[];
+        const parts = (res as any)?.candidates?.[0]?.content?.parts as PromptHistoryItemModelParts[];
         if (!parts || parts.length === 0) return {
             response: {
                 text: `Failed to generate: \`${errorMessage(res)}\``,
@@ -282,12 +278,12 @@ export async function prompt(
             history: []
         };
 
-        if (parts?.[0]?.functionCall) {
-            const concurrentCalls: typeof parts = [];
-            const sequentialCalls: typeof parts = [];
+        if ("functionCall" in parts[0]!) {
+            const concurrentCalls: { functionCall: { name: string; args: any } }[] = [];
+            const sequentialCalls: { functionCall: { name: string; args: any } }[] = [];
 
             for (const part of parts) {
-                if (!part.functionCall) {
+                if (!("functionCall" in part)) {
                     console.log("Unexpected part in function calls\n", part);
                     continue;
                 }
@@ -299,7 +295,7 @@ export async function prompt(
 
             if (concurrentCalls.length > 0) {
                 const promises = concurrentCalls.map(part => {
-                    const call = part.functionCall!;
+                    const call = part.functionCall;
                     const fn = functionDefs.find(f => f.name === call.name)!;
                     return functionCalls[fn.name](call.args);
                 });
@@ -307,10 +303,10 @@ export async function prompt(
                 const results = await Promise.all(promises);
 
                 for (let i = 0; i < concurrentCalls.length; i++) {
-                    const part = concurrentCalls[i];
+                    const part = concurrentCalls[i]!;
                     const result = results[i];
                     const fnName = part.functionCall!.name;
-                    messages.push({ role: "model", parts: [part as any] });
+                    messages.push({ role: "model", parts: [part] });
                     messages.push({ role: "user", parts: [{ functionResponse: { name: fnName, response: result } }] });
                 }
             }
@@ -320,7 +316,7 @@ export async function prompt(
                 const fn = functionDefs.find(f => f.name === call.name);
                 if (fn) {
                     const res = await functionCalls[fn.name](call.args);
-                    messages.push({ role: "model", parts: [part as any] });
+                    messages.push({ role: "model", parts: [part] });
                     messages.push({ role: "user", parts: [{ functionResponse: { name: fn.name, response: res } }] });
                 }
             }
@@ -333,7 +329,7 @@ export async function prompt(
             images: [] as Buffer[]
         };
         parts.forEach(p => {
-            if (p.text) {
+            if ("text" in p) {
                 if (p.text.length < maxLength) response.text = p.text;
                 else {
                     let { text } = p;
@@ -345,12 +341,12 @@ export async function prompt(
 
                     response.text = text;
                 }
-            } else if (p.inlineData) {
-                response.images.push(Buffer.from(p.inlineData.data, "base64"));
+            } else if ("inline_data" in p) {
+                response.images.push(Buffer.from(p.inline_data.data, "base64"));
             }
         });
 
-        messages.push({ role: "model", parts: parts as any });
+        messages.push({ role: "model", parts });
         return {
             response,
             history: messages
@@ -390,7 +386,7 @@ export function geminiResponse(response: PromptResult, debugInfo?: PromptOptions
 
 
     if (debugInfo) {
-        const functionCalls = response.history.map(i => i.role === "model" && "functionCall" in i.parts[0]
+        const functionCalls = response.history.map(i => i.role === "model" && "functionCall" in i.parts[0]!
             ? `\`${i.parts[0].functionCall.name}(${JSON.stringify(i.parts[0].functionCall.args)})\``
             : undefined).filter(i => i);
         container.components.push({

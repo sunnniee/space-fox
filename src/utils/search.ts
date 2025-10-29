@@ -19,16 +19,16 @@ export async function search(query: string) {
         }
     );
 
-    let results: Result[];
+    let results: Result[] = [];
     try {
         if (req.status !== 200) throw new Error(`search: Got status code ${req.status}`);
         const res = await req.text();
         const html = parse(res);
         results = html.querySelectorAll(".snippet:has(> .heading-serpresult)").map(el => ({
-            siteTitle: el.querySelector(".sitename").textContent,
-            siteIcon: el.querySelector(".favicon").attrs.src,
-            title: el.querySelector(".title").textContent,
-            url: el.querySelector(".heading-serpresult").attrs.href,
+            siteTitle: el.querySelector(".sitename")!.textContent,
+            siteIcon: el.querySelector(".favicon")!.attrs.src!,
+            title: el.querySelector(".title")!.textContent,
+            url: el.querySelector(".heading-serpresult")!.attrs.href!,
             description: (el.querySelector(".snippet-description") || el.querySelector(".inline-qa-answer > p"))?.textContent || "[no description]"
         })) satisfies Result[];
         if (!results[0]) throw undefined;

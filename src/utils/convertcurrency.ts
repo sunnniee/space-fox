@@ -13,7 +13,7 @@ const currencyCache = {} as Record<string, {
 purgeOldValues(currencyCache, 86_400_000);
 
 function validate(json: unknown): json is Response {
-    return typeof json === "object" && "date" in json;
+    return typeof json === "object" && json !== null && "date" in json;
 }
 
 export async function convertCurrency(amountFrom: number, currencyFrom: string, currencyTo: string) {
@@ -33,9 +33,9 @@ export async function convertCurrency(amountFrom: number, currencyFrom: string, 
         };
     }
 
-    const table = currencyCache[currencyFrom.toLowerCase()]!.values[currencyFrom.toLowerCase()];
+    const table = currencyCache[currencyFrom.toLowerCase()]!.values[currencyFrom.toLowerCase()]!;
     if (!(currencyTo.toLowerCase() in table))
         return { response: "Failed to convert - failed to get 'to' currency" };
 
-    return { response: amountFrom * table[currencyTo.toLowerCase()] };
+    return { response: amountFrom * table[currencyTo.toLowerCase()]! };
 }

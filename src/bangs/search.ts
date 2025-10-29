@@ -82,7 +82,7 @@ registerBang({
 
         return {
             content: resultMessage(resultMap[id].results, 0, id.toString(), ctx.author.id),
-            afterSend: msg => resultMap[id].message = msg
+            afterSend: msg => resultMap[id]!.message = msg
         };
     },
 
@@ -90,13 +90,15 @@ registerBang({
         match: /^search-/,
         type: ComponentHandlerTypes.BUTTON,
         handle: async ctx => {
-            const [, id, index, userId] = ctx.data.customID.split("-");
+            const [, id, indexStr, userId] = ctx.data.customID.split("-");
+            if (!id || !indexStr || !userId) return; // never
+            const index = parseInt(indexStr);
             if (ctx.user.id !== userId
                 || !resultMap[id]
                 || !resultMap[id].results[index]
             )
                 return ctx.deferUpdate();
-            return ctx.editParent(resultMessage(resultMap[id].results, parseInt(index), id, ctx.user.id));
+            return ctx.editParent(resultMessage(resultMap[id].results, index, id, ctx.user.id));
         }
     }]
 });

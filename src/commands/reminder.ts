@@ -8,6 +8,7 @@ import { reminders } from "../utils/reminders.ts";
 import { registerCommand } from "../utils/commands.ts";
 
 function parseDate(date: string): number | void {
+    if (!date.includes("M")) date = date.toLowerCase();
     const parts = date.match(/(\d+|\D+)/g);
     if (!parts || !parts.length) return;
     if (!parseInt(parts[0], 10)) parts.shift();
@@ -24,53 +25,53 @@ function parseDate(date: string): number | void {
         year: 60 * 60 * 24 * 365
     };
     for (let i = 0; i < parts.length; i += 2) {
-        switch (parts[i + 1].replace(/[^a-zA-Z]/g, "")) {
+        switch (parts[i + 1]!.replace(/[^a-zA-Z]/g, "")) {
             case "s":
             case "sec":
             case "secs":
             case "second":
             case "seconds":
-                time += parseInt(parts[i], 10) * multipliers.second;
+                time += parseInt(parts[i]!, 10) * multipliers.second;
                 break;
             case "m":
             case "min":
             case "mins":
             case "minute":
             case "minutes":
-                time += parseInt(parts[i], 10) * multipliers.minute;
+                time += parseInt(parts[i]!, 10) * multipliers.minute;
                 break;
             case "h":
             case "hr":
             case "hrs":
             case "hour":
             case "hours":
-                time += parseInt(parts[i], 10) * multipliers.hour;
+                time += parseInt(parts[i]!, 10) * multipliers.hour;
                 break;
             case "d":
             case "day":
             case "days":
-                time += parseInt(parts[i], 10) * multipliers.day;
+                time += parseInt(parts[i]!, 10) * multipliers.day;
                 break;
             case "w":
             case "wk":
             case "wks":
             case "week":
             case "weeks":
-                time += parseInt(parts[i], 10) * multipliers.week;
+                time += parseInt(parts[i]!, 10) * multipliers.week;
                 break;
             case "M":
             case "mo":
             case "mon":
             case "month":
             case "months":
-                time += parseInt(parts[i], 10) * multipliers.month;
+                time += parseInt(parts[i]!, 10) * multipliers.month;
                 break;
             case "y":
             case "yr":
             case "yrs":
             case "year":
             case "years":
-                time += parseInt(parts[i], 10) * multipliers.year;
+                time += parseInt(parts[i]!, 10) * multipliers.year;
                 break;
             default:
                 return;
@@ -100,7 +101,7 @@ function addReminder(duration: number,
         duration,
         content
     };
-    if (client.guilds.has(ctx.guildID) && !ephemeral) {
+    if (ctx.guildID && client.guilds.has(ctx.guildID) && !ephemeral) {
         reminder.channelID = ctx.channelID;
         reminder.guildID = ctx.guildID;
     }

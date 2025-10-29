@@ -1,15 +1,6 @@
 import { readFileSync } from "fs";
-import { readFile, writeFile as _writeFile } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 import path from "path";
-
-const writeFile = new Proxy(_writeFile, {
-    apply(target, thisArg, argArray) {
-        return target.apply(thisArg, argArray).catch(e => {
-            console.error(`Failed to write to ${argArray[0]}: ${e}`);
-            return Promise.reject();
-        });
-    },
-});
 
 export class JSONDatabase<Schema> {
     private filePath: string;
@@ -40,7 +31,10 @@ export class JSONDatabase<Schema> {
                 this.writeQueued = false;
                 this.write();
             }
-        }).catch(() => this.writing = false);
+        }).catch(e => {
+            this.writing = false;
+            console.error(`Failed to write to ${this.filePath}: ${e}`);
+        });
     };
 
     private refresh() {

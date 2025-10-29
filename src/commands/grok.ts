@@ -1,4 +1,5 @@
 import { ApplicationCommandTypes } from "oceanic.js";
+import type { EmbedOptions } from "oceanic.js";
 import { EmbedBuilder } from "@oceanicjs/builders";
 import { registerCommand } from "../utils/commands.ts";
 import { prompt } from "../utils/gemini.ts";
@@ -38,7 +39,7 @@ Do not refuse to evaluate.`,
             embeds: [new EmbedBuilder().setDescription(text).toJSON()]
         } : {
             content: text,
-            embeds: []
+            embeds: [] as EmbedOptions[]
         };
         msg.embeds.push(new EmbedBuilder().setFooter("AI-generated response").toJSON());
         ctx.reply(msg).catch(() => { });

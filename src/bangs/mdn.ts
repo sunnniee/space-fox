@@ -61,9 +61,13 @@ registerBang({
         match: /^mdn:/,
         type: ComponentHandlerTypes.BUTTON,
         handle: async ctx => {
-            const [, id, messageNr, i] = ctx.data.customID.split(":");
+            const [, id, messageNr, iStr] = ctx.data.customID.split(":");
+            if (!id || !messageNr || !iStr) return; // never
             if (id !== ctx.user.id || !messages[messageNr]) return ctx.deferUpdate();
             const results = messages[messageNr].buttons;
+
+            const i = parseInt(iStr);
+            if (!results[i]) return; // never
             const { title, url } = results[i];
 
             const result = (await (await fetch(`https://developer.mozilla.org${url}`)).text())
@@ -87,6 +91,7 @@ registerBang({
 
             delete messages[messageNr];
             const { groups } = match;
+            if (!groups) return; // never
             return ctx.editParent(formatAndAddLinkButton({
                 components: [{
                     type: ComponentTypes.CONTAINER,
@@ -101,7 +106,7 @@ registerBang({
                     } satisfies SeparatorComponent,
                     {
                         type: ComponentTypes.TEXT_DISPLAY,
-                        content: parse(groups.summary, `https://developer.mozilla.org${url}`)
+                        content: parse(groups.summary!, `https://developer.mozilla.org${url}`)
                     } satisfies TextDisplayComponent,
                     ]
                         .concat(groups.description ? [{
@@ -171,7 +176,7 @@ ${entry.summary}\n`
                 flags: MessageFlags.IS_COMPONENTS_V2
             },
             link: "https://developer.mozilla.org/en-US/search?q=" + encodeURIComponent(content),
-            afterSend: msg => messages[messageNr].message = msg
+            afterSend: msg => messages[messageNr]!.message = msg
         };
     }
 });

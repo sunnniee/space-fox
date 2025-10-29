@@ -1,15 +1,16 @@
 import { Attachment, CommandInteraction, Message, User } from "oceanic.js";
-import type { AnyInteractionChannel, AnyTextableChannel, ApplicationCommandOptionsWithValue, ApplicationCommandOptionTypes, ApplicationCommandTypes, AutocompleteInteraction, ComponentInteraction, ComponentTypes, CreateApplicationCommandOptions, CreateMessageOptions, ModalSubmitInteraction, Uncached } from "oceanic.js";
+import type { AnyInteractionChannel, ApplicationCommandOptionsWithValue, ApplicationCommandOptionTypes, ApplicationCommandTypes, AutocompleteInteraction, ComponentInteraction, ComponentTypes, CreateApplicationCommandOptions, CreateMessageOptions, ModalSubmitInteraction, Uncached } from "oceanic.js";
 import type { PermissionTier } from "./permissions.ts";
 import type { prompt } from "./utils/gemini.ts";
 
+export type NonEmptyArray<T> = [T, ...T[]];
 export type BangResult = {
     content: CreateMessageOptions | string;
     link?: string;
-    afterSend?: (msg: Message<AnyTextableChannel>) => any;
+    afterSend?: (msg: Message<AnyInteractionChannel | Uncached>) => any;
 };
 
-export type Context = Message<AnyTextableChannel | Uncached>
+export type Context = Message<AnyInteractionChannel | Uncached>
     | (CommandInteraction<AnyInteractionChannel | Uncached> & { author: User });
 
 export enum ComponentHandlerTypes {
@@ -37,7 +38,7 @@ export type ComponentHandler = ButtonComponentHandler | StringSelectComponentHan
 
 export type Bang = {
     title: string;
-    names: string[];
+    names: NonEmptyArray<string>;
     predicate?: () => boolean;
     ignoreIfBlank?: boolean;
     shortExecute?: boolean;
@@ -66,13 +67,24 @@ export type InlineData = {
     mime_type: string;
     data: string;
 };
-export type PromptHistoryItem = {
-    role: "user" | "model";
-    parts: ({ text: string }
-        | { inline_data: InlineData }
-        | { functionCall: { name: string; args: any } }
-        | { functionResponse: { name: string; response: any } })[];
+export type PromptHistoryItemUserParts = { text: string }
+    | { inline_data: InlineData }
+    | { functionResponse: { name: string; response: any } };
+export type PromptHistoryItemModelParts = { text: string }
+    | { inline_data: InlineData }
+    | { functionCall: { name: string; args: any } };
+export type PromptHistoryItemParts = PromptHistoryItemUserParts | PromptHistoryItemModelParts;
+
+export type PromptHistoryUserItem = {
+    role: "user";
+    parts: PromptHistoryItemUserParts[];
 };
+export type PromptHistoryModelItem = {
+    role: "model";
+    parts: PromptHistoryItemModelParts[];
+};
+export type PromptHistoryItem = PromptHistoryUserItem | PromptHistoryModelItem;
+
 export type PromptResult = {
     response: {
         text: string;

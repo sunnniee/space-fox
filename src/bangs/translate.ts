@@ -1,5 +1,5 @@
 import { EmbedBuilder } from "@oceanicjs/builders";
-import type { CreateMessageOptions, MessageActionRow } from "oceanic.js";
+import type { CreateMessageOptions, MessageActionRow, MessageActionRowComponent } from "oceanic.js";
 import { ButtonStyles, CommandInteraction, ComponentTypes, MessageFlags } from "oceanic.js";
 
 import { registerBang } from "../utils/bangs.ts";
@@ -11,7 +11,7 @@ function setDeepValue(obj: Record<string, any>, path: string, value: any) {
     let current = obj;
 
     for (let i = 0; i < keys.length; i++) {
-        const key = keys[i];
+        const key = keys[i]!;
         const isLast = i === keys.length - 1;
 
         if (isLast) {
@@ -118,10 +118,9 @@ registerBang({
                         ? c.style === ButtonStyles.LINK
                             ? c
                             : { ...c, disabled: true, emoji: c.emoji?.id ? null : c.emoji }
-                        : null).filter(v => v)
+                        : null).filter(Boolean) as MessageActionRowComponent[]
             }))
         };
-
         translations.forEach(({ pos, text }) =>
             setDeepValue(msg, pos, text));
         return {

@@ -2,7 +2,8 @@
 // you have been warned
 // TODO: switch to some proper html parsing
 
-function standardize(unit: string, valueStr: string) {
+function standardize(unit: string | undefined, valueStr: string | undefined) {
+    if (!unit || !valueStr) return "";
     unit = unit.toLowerCase();
     if (
         ["celsius", "fahrenheit", "psi", "feet"].includes(unit)
@@ -20,7 +21,7 @@ function standardize(unit: string, valueStr: string) {
         unit = [
             ...words.splice(0, words.length - 2),
             words[0] + "s",
-            words[1].substring(0, words[1].length - 1),
+            words[1]!.substring(0, words[1]!.length - 1),
         ].join(" ");
     }
     return unit;
@@ -33,7 +34,7 @@ function checkCurrency(body: string, short = false): string | false {
 
     if (currMatch) {
         const [_, valueFrom, currFrom, valueTo, currTo] = currMatch;
-        if (short) return valueTo;
+        if (short) return valueTo!;
         else return `${valueFrom} ${currFrom} is equal to **${valueTo}** ${currTo}`;
     } else return false;
 }
@@ -45,7 +46,7 @@ function checkUnit(body: string, short = false): string | false {
 
     if (unitMatch) {
         const [_, valueFrom, unitFrom, valueTo, unitTo] = unitMatch;
-        if (short) return valueTo;
+        if (short) return valueTo!;
         else return `${valueFrom} ${standardize(
             unitFrom,
             valueFrom
@@ -61,7 +62,7 @@ function checkCrypto(body: string, short = false) {
     if (cryptoMatch) {
         const [_, valueFrom, currFrom, valueTo, currTo] = cryptoMatch;
         if (short) return valueTo;
-        else return `${valueFrom} ${currFrom.toUpperCase()} is equal to **${valueTo}** ${currTo.toUpperCase()}`;
+        else return `${valueFrom} ${currFrom!.toUpperCase()} is equal to **${valueTo}** ${currTo!.toUpperCase()}`;
     } else return false;
 }
 

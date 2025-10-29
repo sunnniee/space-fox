@@ -31,12 +31,22 @@ registerBang({
             link: "https://wiki.archlinux.org/index.php?search=" + encodeURIComponent(content)
         };
 
-        const { title, key } = searchResult.pages[0];
+        const { title, key } = searchResult.pages[0]!;
         const result = await (
             await fetch(`https://wiki.archlinux.org/rest.php/v1/page/${encodeURIComponent(key)}/html`)
         ).text();
         let text = result.match(/<section data-mw-section-id="0".+?<\/section>/s)?.[0];
-        if (!text) return;
+        if (!text) return {
+            content: {
+                embeds: [new EmbedBuilder()
+                    .setColor(0x0088cc)
+                    .setAuthor(title, "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Arch_Linux_%22Crystal%22_icon.svg/250px-Arch_Linux_%22Crystal%22_icon.svg.png")
+                    .setDescription("[failed to parse page content]")
+                    .toJSON()
+                ]
+            },
+            link: "https://wiki.archlinux.org/title/" + encodeURIComponent(key)
+        };
 
         text = text
             .replace(/<\/?section.*>|<link.*\/>|<\/?p.*?>|<meta.+?\/>|<\/?span.*?>|<\/?dd.*?>|<\/?dl.*?>/g, "")

@@ -22,7 +22,7 @@ export const client = new _Client({
     allowedMentions: { everyone: false, roles: false, users: false, repliedUser: false }
 }) as Client;
 
-const log = e => { if (!process.env.SUPPRESS_WARNINGS) console.log(e); };
+const log = (e: any) => { if (!process.env.SUPPRESS_WARNINGS) console.log(e); };
 
 client.sendMessage = (channelID, content, tryAgain = true) =>
     client.rest.channels

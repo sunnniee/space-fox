@@ -7,7 +7,7 @@ import { purgeOldValues } from "../utils/purge.ts";
 import { formatAndAddLinkButton, registerBang } from "../utils/bangs.ts";
 import { ComponentHandlerTypes } from "../types.ts";
 
-const SEGMENT_MARKER = "@@segment marker@@";
+const SEGMENT_MARKER = "@@\x1f@@";
 /* [(Brief), start of content 1, (Top), content 1, title 2, content 2, ...] */
 function extractSegments(text: string): string[] {
     const relevant = text.match(/<(?:p|h\d).+?<\/p>/gs);
@@ -27,7 +27,7 @@ function extractSegments(text: string): string[] {
         .replace(/<\/?\w.*?>/gi, "");
 
     const segments = result.split(SEGMENT_MARKER);
-    segments.splice(1, 0, segments[2].split("\n\n").slice(0, 2).join("\n\n"));
+    segments.splice(1, 0, segments[2]!.split("\n\n").slice(0, 2).join("\n\n"));
     return segments;
 }
 
@@ -59,7 +59,7 @@ purgeOldValues(allSegments, 480_000, obj => {
     if (msg) {
         client.editMessage(msg, {
             components: msg.components.filter(c =>
-                c.type === ComponentTypes.ACTION_ROW && c.components[0].type !== ComponentTypes.STRING_SELECT),
+                c.type === ComponentTypes.ACTION_ROW && c.components[0]!.type !== ComponentTypes.STRING_SELECT),
             allowedMentions: { repliedUser: false } // not sure why it needs this
         });
     }
@@ -97,10 +97,11 @@ registerBang({
         type: ComponentHandlerTypes.STRING_SELECT,
         handle: async (ctx, pos) => {
             const [, id, segmentNr] = ctx.data.customID.split(":");
+            if (!id || !segmentNr) return; // never
             const segment = allSegments[segmentNr];
             if (ctx.user.id !== id || !segment) return ctx.deferUpdate();
 
-            const title = segment.titles[pos], content = segment.contents[pos];
+            const title = segment.titles[parseInt(pos)]!, content = segment.contents[parseInt(pos)]!;
             const { text: info, reduced } = reduce(content);
 
             const embed = wikipediaEmbed(
@@ -123,7 +124,7 @@ registerBang({
             if (ctx.user.id !== id) return ctx.deferUpdate();
 
             // todo: DRY?
-            const result = await wikipedia(content, param.toLowerCase() || "en");
+            const result = await wikipedia(content, param!.toLowerCase() || "en");
             if (result.error) return {
                 content: {
                     embeds: [new EmbedBuilder()
@@ -161,13 +162,13 @@ registerBang({
                 })
                 .toJSON();
 
-            const { text: info, reduced } = reduce(contents[0]);
+            const { text: info, reduced } = reduce(contents[0]!);
 
             return ctx.editParent({
                 ...formatAndAddLinkButton({
                     embeds: [wikipediaEmbed(title, "", thumbnail, info, reduced)],
                     components: select
-                }, bangTitle, link)
+                }, bangTitle, link!)
             });
         }
     }],
@@ -190,13 +191,13 @@ registerBang({
         const segments = extractSegments(text);
 
         if (result.isDisambiguation) {
-            const info = segments[1];
+            const info = segments[1]!;
 
             const select = new ComponentBuilder<MessageActionRow>()
                 .addSelectMenu({
                     type: ComponentTypes.STRING_SELECT,
                     customID: `wikipedia-disambiguation:${ctx.author.id}:${(parameter || "").substring(0, 2)}`,
-                    options: result.results.map(t => ({ label: t, value: t })).slice(0, 25)
+                    options: result.results!.map(t => ({ label: t, value: t })).slice(0, 25)
                 })
                 .toJSON();
 
@@ -231,7 +232,7 @@ registerBang({
             })
             .toJSON();
 
-        const { text: info, reduced } = reduce(contents[0]);
+        const { text: info, reduced } = reduce(contents[0]!);
 
         return {
             content: {
@@ -239,7 +240,7 @@ registerBang({
                 components: select
             },
             link,
-            afterSend: msg => allSegments[segmentNr].message = msg
+            afterSend: msg => allSegments[segmentNr]!.message = msg
         };
     }
 });

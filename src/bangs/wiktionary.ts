@@ -44,16 +44,16 @@ registerBang({
         };
 
         const fields = fragment.split("\n\n\n").map(f => {
-            const match = f.match(/^=+ ([\w ]+) =+\n(.*)/s);
+            const match = f.match(/^=+ ([\w ]+) =+\n(.+)/s);
             if (!match) return null;
             const [_, name, value] = match;
             if (
-                ["Etymology", "Translations", "References", "Anagrams", "See also", "Further reading"].includes(name)
-                || !value.trim()
+                ["Etymology", "Translations", "References", "Anagrams", "See also", "Further reading"].includes(name!)
+                || !value!.trim()
             )
                 return null;
             else return { name, value };
-        }).filter(f => f) satisfies EmbedField[];
+        }).filter(Boolean) as EmbedField[];
 
         return {
             content: {
