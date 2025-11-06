@@ -8,7 +8,12 @@ export type Result = {
     description: string;
 };
 
-export async function search(query: string) {
+export type SearchReponse = {
+    results: Result[];
+    comment?: string;
+};
+
+export async function search(query: string): Promise<SearchReponse> {
     const req = await fetch(
         "https://search.br" + `ave.com/search?q=${encodeURIComponent(query)}`,
         {
@@ -20,6 +25,7 @@ export async function search(query: string) {
     );
 
     let results: Result[] = [];
+    let comment: string | undefined = undefined;
     try {
         if (req.status !== 200) throw new Error(`search: Got status code ${req.status}`);
         const res = await req.text();
@@ -31,10 +37,16 @@ export async function search(query: string) {
             url: el.querySelector(".heading-serpresult")!.attrs.href!,
             description: (el.querySelector(".snippet-description") || el.querySelector(".inline-qa-answer > p"))?.textContent || "[no description]"
         })) satisfies Result[];
+
+        const comments = html.querySelector("#advanced-keywords");
+        if (comments) {
+            const text = [...comments.querySelectorAll(".title, .subtitle")!].map(e => e.textContent);
+            comment = text.join(". ").replace(/ +/g, " ").trim();
+        }
         if (!results[0]) throw undefined;
     } catch(e) {
         if (e) console.log(e);
     }
 
-    return results;
+    return { results, comment };
 }

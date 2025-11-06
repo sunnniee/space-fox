@@ -65,7 +65,7 @@ registerBang({
     ignoreIfBlank: true,
     restrict: [PermissionTier.FRIENDS, PermissionTier.ME],
     execute: async (content, _, ctx) => {
-        const results = await search(content);
+        const { results } = await search(content);
         if (!results?.length) return {
             content: {
                 content: "Failed to look that up",

@@ -174,7 +174,7 @@ const functionCalls: FunctionImpls = {
     }),
     convert_currency: async ({ amount_from, currency_from, currency_to }) =>
         await convertCurrency(amount_from, currency_from, currency_to),
-    search: async ({ query }) => ({ response: await search(query) }),
+    search: async ({ query }) => await search(query),
     wolframalpha: async ({ query }) => await wolframalpha(query)
 };
 
