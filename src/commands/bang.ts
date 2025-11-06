@@ -79,8 +79,13 @@ registerCommand({
                     name: `${queryPart}!${aliases[0]} (${title})`,
                     value: `${queryPart}!${aliases[0]}`
                 };
-            });
+            }).filter(e => e.name.length <= 100);
 
+            if (!res.length)
+                return ctx.result([{
+                    name: "[input too long for autocomplete]",
+                    value: "unknown"
+                }]);
             return ctx.result(res);
 
         } else {
@@ -121,9 +126,14 @@ registerCommand({
                         name: `${queryPart}!${aliases[0]} (${title})`,
                         value: `${queryPart}!${aliases[0]}`
                     };
-                })
+                }).filter(e => e.name.length <= 100)
             );
 
+            if (!choices.length)
+                return ctx.result([{
+                    name: "[input too long for autocomplete]",
+                    value: "unknown"
+                }]);
             return ctx.result(choices.slice(0, 8));
 
         }
