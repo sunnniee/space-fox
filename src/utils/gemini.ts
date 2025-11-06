@@ -29,6 +29,8 @@ type FunctionImpls = {
     [K in keyof FunctionParamMap]: (args: FunctionParamMap[K]) => Promise<any>;
 };
 
+type FunctionNames = (FunctionDefs[number]["name"])[];
+
 async function basicCalculator(input: string) {
     let res: number;
     try {
@@ -128,9 +130,11 @@ Can also be used for the value of cryptocurrency, in which case use the three le
     }
 }, {
     name: "search",
-    description: "Search the Internet. Provides some top results, the site they are from and a basic description of the site. \
-For Reddit and StackExchange results, the first reply is provided instead. Use this like a search engine, where the query \
-primarily consists of keywords.",
+    description: `Search the Internet. Provides some top results, \
+the site they are from and a basic description of the site. \
+For Reddit and StackExchange results, the first reply is provided instead.
+Use this like a search engine, where the query primarily consists of keywords. Search operators like \
+-unnecessary and site:examle.com are supported. You can also directly search an URL for info about it.`,
     parameters: {
         type: "object",
         properties: {
@@ -160,7 +164,7 @@ const concurrentQueryFunctionDefs = [
     "basic_calculator",
     "wikipedia",
     "convert_currency"
-] as FunctionDefs[number]["name"][];
+] as FunctionNames;
 
 const functionCalls: FunctionImpls = {
     wikipedia: ({ query }) => wikipedia(query, "en", false, true),
@@ -200,7 +204,7 @@ function errorMessage(e: any) {
 export async function prompt(
     content: string,
     attachments: ({ url: string; contentType?: string })[],
-    functions: FunctionDefs[number]["name"][] | "all",
+    functions: FunctionNames | "all",
     options: PromptOptions = {}
 ): Promise<PromptResult> {
     const { systemPrompt = undefined,
@@ -253,7 +257,9 @@ export async function prompt(
         else return functions.includes(fn.name);
     });
     if (fns.length) {
-        body.tools = [{ functionDeclarations: fns }];
+        body.tools = [{
+            functionDeclarations: fns
+        }];
         body.toolConfig = {
             functionCallingConfig: {
                 mode: "VALIDATED"
@@ -347,6 +353,7 @@ export async function prompt(
         });
 
         messages.push({ role: "model", parts });
+        console.log((await import("util")).inspect(messages, { depth: Infinity, colors: true }));
         return {
             response,
             history: messages

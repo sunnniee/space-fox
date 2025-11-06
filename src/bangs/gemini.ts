@@ -12,8 +12,9 @@ registerBang({
     takesParameters: true,
     paramSuggestions: {
         l: "longer response",
-        t: "use tools",
-        lt: "both"
+        t: "don't use tools (e.g web search)",
+        r: "reason for longer",
+        lt: "both long response and use tools"
     },
     exampleQueries: [
         "why is the sky blue",
@@ -38,7 +39,7 @@ registerBang({
             else model = "gemini-2.5-flash-preview-09-2025";
 
         const tools = [] as PromptFunctions;
-        if (params.includes("t")) {
+        if (!params.includes("t")) {
             tools.push("basic_calculator", "convert_currency", "convert_unit", "wikipedia");
             if (extraPerms) {
                 tools.push("search");
@@ -52,7 +53,7 @@ registerBang({
                     + new Date().toDateString(),
             model, imageGeneration,
             maxLength: params.includes("d") ? 3000 : 3900,
-            reasoningBudget: /* extraPerms && */ params.includes("r") ? 2048 : 0
+            reasoningBudget: /* extraPerms && */ params.includes("r") ? 2048 : 160
         };
         const response = await prompt(content, attachments, tools, options);
 

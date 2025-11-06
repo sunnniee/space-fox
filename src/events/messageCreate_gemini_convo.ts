@@ -23,7 +23,8 @@ client.on("messageCreate", async msg => {
     const response =
         await prompt(msg.content, msg.attachments.toArray(), tools, {
             model: "gemini-2.5-flash-preview-09-2025",
-            history: historyItem.history
+            history: historyItem.history,
+            reasoningBudget: 160
         });
 
     const res = geminiResponse(response);
