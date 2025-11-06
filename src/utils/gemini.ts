@@ -353,7 +353,7 @@ export async function prompt(
         });
 
         messages.push({ role: "model", parts });
-        console.log((await import("util")).inspect(messages, { depth: Infinity, colors: true }));
+        // console.log((await import("util")).inspect(messages, { depth: Infinity, colors: true }));
         return {
             response,
             history: messages

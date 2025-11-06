@@ -73,15 +73,19 @@ registerCommand({
                 }
             }
 
+            let tooLong = false;
             const res = bangList.slice(0, 8).map(([title, aliases]) => {
                 const queryPart = content ? `${content} ` : "";
                 return {
                     name: `${queryPart}!${aliases[0]} (${title})`,
                     value: `${queryPart}!${aliases[0]}`
                 };
-            }).filter(e => e.name.length <= 100);
+            }).filter(e => {
+                if (e.name.length > 100) tooLong = true;
+                return e.name.length <= 100;
+            });
 
-            if (!res.length)
+            if (!res.length && tooLong)
                 return ctx.result([{
                     name: "[input too long for autocomplete]",
                     value: "unknown"
@@ -119,6 +123,8 @@ registerCommand({
                 // @ts-expect-error cba to add useless null checks
                 [entries[i], entries[j]] = [entries[j], entries[i]];
             }
+
+            let tooLong = false;
             choices.push(
                 ...entries.map(([title, aliases]) => {
                     const queryPart = content ? `${content} ` : "";
@@ -126,10 +132,13 @@ registerCommand({
                         name: `${queryPart}!${aliases[0]} (${title})`,
                         value: `${queryPart}!${aliases[0]}`
                     };
-                }).filter(e => e.name.length <= 100)
+                }).filter(e => {
+                    if (e.name.length > 100) tooLong = true;
+                    return e.name.length <= 100;
+                })
             );
 
-            if (!choices.length)
+            if (!choices.length && tooLong)
                 return ctx.result([{
                     name: "[input too long for autocomplete]",
                     value: "unknown"
