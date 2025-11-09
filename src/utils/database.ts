@@ -42,8 +42,8 @@ export class JSONDatabase<Schema> {
     }
 
     get(id: string, required: true): Readonly<Schema>;
-    get(id: string, required?: false): Readonly<Schema | void>;
-    get(id: string, required?: boolean): Readonly<Schema | void> {
+    get(id: string, required?: false): Readonly<Schema | undefined>;
+    get(id: string, required?: boolean): Readonly<Schema | undefined> {
         const item = this.cache[id];
         if (!item && required) {
             throw new Error(`Missing item ${id} in database ${this.filePath}`);

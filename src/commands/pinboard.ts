@@ -68,7 +68,8 @@ ${pin.content.components?.map(c => c.label || "")?.join("\n") || ""}`.trim();
 }
 
 function extractContentFromEmbed(embed: Embed | undefined) {
-    if (!embed) return undefined;
+    if (!embed || !["rich", "link", "article", "video"].includes(embed.type!)) return undefined;
+    if (embed.type === "video" && embed.provider?.name !== "YouTube") return undefined;
     const text = `${embed.author?.name ? `### ${embed.author.name}` : ""}
 ${embed.title ? `# ${embed.title}` : ""}
 ${embed.description?.slice(0, 3000) || ""}
@@ -77,6 +78,20 @@ ${embed.footer?.text ? `-# ${embed.footer.text}` : ""}`.trim() || undefined;
         text,
         imageUrl: embed.thumbnail?.url
     };
+}
+
+async function fetchTenorGif(url: string): Promise<string | undefined> {
+    const slug = url.split("/").at(-1)!;
+    const id = slug.split("-").at(-1);
+    if (!id) return undefined;
+    const res = await (await fetch(`https://discord.com/api/v9/gifs/search?q=${slug}&media_format=gif`)).json();
+    if (res && typeof res === "object" && Array.isArray(res)) {
+        const gif = res.find(i => i.id === id);
+        if (!gif) return undefined;
+        return gif.src;
+    }
+    return undefined;
+
 }
 
 function makePinboardMessage(pin: PinboardItem, userId: string, id: number, idsLeft: number[], idsRight: number[],
@@ -542,6 +557,33 @@ registerCommand({
         const { pins } = pinboard;
         const msg = ctx.data.target;
 
+        const media = msg.attachments
+            .filter(a => a.contentType
+                && (a.contentType.startsWith("image/") || a.contentType.startsWith("video/")))
+            .map(a => ({
+                link: a.url,
+                type: a.contentType,
+                description: a.description || ""
+            }));
+        msg.embeds.forEach(async e => {
+            if (e.provider?.name === "Tenor") {
+                const url = await fetchTenorGif(e.url!);
+                media.push({
+                    link: url || e.video!.url!,
+                    type: "image/gif",
+                    description: ""
+                });
+            } else if ((e.type === "image" || e.type === "gifv"
+                || (e.type === "video" && e.provider?.name !== "YouTube")) && e.url) {
+                const { mime_type } = await attachmentUrlToImageInput(e.url);
+                media.push({
+                    link: e.url,
+                    type: mime_type,
+                    description: ""
+                });
+            }
+        });
+
         if (pins.find(p => p.messageId === msg.id)) return ctx.reply({
             content: "That message is already pinned!",
             flags: MessageFlags.EPHEMERAL
@@ -556,14 +598,7 @@ registerCommand({
             content: {
                 text: msg.content,
                 embedContent: extractContentFromEmbed(msg.embeds[0]),
-                media: msg.attachments
-                    .filter(a => a.contentType
-                        && (a.contentType.startsWith("image/") || a.contentType.startsWith("video/")))
-                    .map(a => ({
-                        link: a.url,
-                        type: a.contentType,
-                        description: a.description || ""
-                    })),
+                media,
                 components: msg.components
                     .filter(c => c.type === ComponentTypes.ACTION_ROW)
                     .map(c => c.components).flat()
