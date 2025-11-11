@@ -32,12 +32,20 @@ type FunctionImpls = {
 type FunctionNames = (FunctionDefs[number]["name"])[];
 
 async function basicCalculator(input: string) {
+    if (input.length > 2000) return { error: "Failed to calculate" };
     let res: number;
     try {
-        res = eval(input.replace(/[^\d+\-*/.()]/g, "")
-            .replace(/\++/g, "+").replace(/-+/g, "-")
+        const sanitized = input.replace(/[^\d+\-*/%.,()[\]e]/g, "")
+            .replace(/\[/g, "(").replace(/\]/g, ")")
+            .replace(/,/g, ".")
+            .replace(/\++/g, "+")
+            // e.g. 1 - -2 -> 1--2 -> 1+2
+            .replace(/-+/g, m => m.length % 2 === 0 ? "+" : "-")
             .replace(/\/+/g, "/")
-            .replace(/\(\)/g, ""));
+            .replace(/e+/g, "e")
+            .replace(/\(\)/g, "");
+        if (sanitized.includes("e(")) return { error: "Failed to calculate" };
+        res = eval(sanitized);
     } catch {
         return { error: "Failed to calculate" };
     }
@@ -72,8 +80,8 @@ const functionDefs = [{
     }
 }, {
     name: "basic_calculator",
-    description: "Perform basic maths. Supports only addition, subtraction, multiplication, division and exponentiation (via the ** symbol only).\
-Only use round parenthesis ().",
+    description: "Perform basic maths. Supports only addition, subtraction, multiplication, division exponentiation (via the ** symbol only) \
+and modulo (%). Only use round parenthesis ().",
     parameters: {
         type: "object",
         properties: {
