@@ -1,5 +1,5 @@
 import { ApplicationCommandOptionTypes, ApplicationCommandTypes, ButtonStyles, ComponentTypes, MessageFlags, TextInputStyles } from "oceanic.js";
-import type { ComponentInteraction, ContainerComponent, Embed, InteractionContent, SelectOption, TextButton, URLButton } from "oceanic.js";
+import type { AutocompleteChoice, ComponentInteraction, ContainerComponent, Embed, InteractionContent, SelectOption, TextButton, URLButton } from "oceanic.js";
 import { ComponentBuilder } from "@oceanicjs/builders";
 import { QuickScore } from "quick-score";
 import { registerCommand } from "../utils/commands.ts";
@@ -217,13 +217,82 @@ registerCommand({
         name: "search",
         description: "Search query",
         type: ApplicationCommandOptionTypes.STRING,
+        autocomplete: true,
         required: false
     }],
+    autocomplete: async (ctx, query) => {
+        if (!query || !query.length) return ctx.result([]);
+        const pinboard = allPinboards.get(ctx.user.id);
+        if (!pinboard || !pinboard.pins.length) return ctx.result([]);
+
+        const scorer = new QuickScore(pinboard.pins, {
+            keys: ["searchableContent"]
+        });
+        const results = scorer.search(query);
+
+        const matches = [] as AutocompleteChoice[];
+
+        for (const res of results) {
+            if (!res.matches.searchableContent![0]) continue;
+
+            const [matchStart, matchEnd] = res.matches.searchableContent![0];
+            let segmentStart = Math.max(matchStart - 30, 0);
+            let segmentEnd = Math.min(matchEnd + 50, res.scoreValue.length);
+            const MAX_WORD_LENGTH = 12;
+
+            if (segmentStart > 0) {
+                let wordStart = segmentStart;
+                while (wordStart > 0 && !res.scoreValue[wordStart - 1]!.match(/\s/)) {
+                    wordStart--;
+                }
+                if (segmentStart - wordStart < MAX_WORD_LENGTH) {
+                    segmentStart = wordStart;
+                }
+            }
+            if (segmentEnd < res.scoreValue.length) {
+                let wordEnd = segmentEnd;
+                while (wordEnd < res.scoreValue.length && !res.scoreValue[wordEnd]!.match(/\s/)) {
+                    wordEnd++;
+                }
+                if (wordEnd - segmentEnd < MAX_WORD_LENGTH) {
+                    segmentEnd = wordEnd;
+                }
+            }
+
+            let segment = res.scoreValue.replaceAll("\n", " ").substring(segmentStart, segmentEnd);
+            if (segmentStart > 0) segment = "..." + segment;
+            if (segmentEnd < res.scoreValue.length) segment += "...";
+            if (segment.length > 100) {
+                segment = segment.substring(0, 97) + "...";
+            }
+
+            matches.push({
+                name: segment,
+                value: `id:${res.item.id}`
+            });
+            if (matches.length >= 10) break;
+        }
+
+        return ctx.result(matches);
+    },
     execute: async (ctx, search) => {
         const pinboard = allPinboards.get(ctx.user.id);
         if (!pinboard || !pinboard.pins.length) return ctx.reply({
             content: "Your pinboard is empty! This is a place to keep useful messages for later - add one by selecting a message and clicking `Apps > Add to pinboard`"
         });
+
+        if (search?.match(/^id:\d+$/)) {
+            const [, id] = search.split(":");
+            if (!id) return; // never
+
+            const pin = pinboard.pins.find(p => p.id === parseInt(id, 10));
+            if (!pin) return ctx.reply({
+                content: "Couldn't find anything relating to that",
+                flags: MessageFlags.EPHEMERAL
+            });
+
+            return ctx.reply(makePinboardMessage(pin, ctx.user.id, parseInt(id, 10), [], []));
+        }
 
         const ids = [] as number[];
         if (search) {
