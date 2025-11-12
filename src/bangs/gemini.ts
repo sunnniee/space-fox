@@ -12,9 +12,9 @@ registerBang({
     takesParameters: true,
     paramSuggestions: {
         l: "longer response",
-        t: "don't use tools (e.g web search)",
+        s: "search the internet",
         r: "reason for longer",
-        lt: "both long response and use tools"
+        ls: "both long response and search"
     },
     exampleQueries: [
         "why is the sky blue",
@@ -39,18 +39,20 @@ registerBang({
             else model = "gemini-2.5-flash-preview-09-2025";
 
         const tools = [] as PromptFunctions;
-        if (!params.includes("t")) {
-            tools.push("basic_calculator", "convert_currency", "convert_unit", "wikipedia");
-            if (extraPerms) {
-                tools.push("search");
-                if ("WOLFRAMALPHA_API_KEY" in process.env) tools.push("wolframalpha");
-            }
+        tools.push("basic_calculator", "convert_currency", "convert_unit");
+        if (params.includes("s")) {
+            tools.push("wikipedia", "search");
+            if ("WOLFRAMALPHA_API_KEY" in process.env) tools.push("wolframalpha");
         }
         const options: PromptOptions = {
             systemPrompt: params.includes("l")
                 ? undefined
-                : "You are Gemini, a large language model. Keep your responses brief and to the point. Today is "
-                    + new Date().toDateString(),
+                : `The current date and time is ${new Date().toUTCString()}.
+Basic markdown is supported: bold, italic, underline, strikethrough, headers, links, ordered and unordered lists.
+You can also use spoliers: ||spoiler text here|| and block quotes: > Hey!
+Anything else like images or tables are NOT supported.
+If you need to use the symbols >, |, _, *, ~, @, #, \`, put a backslash before them to escape them.
+If the user is chatting casually, your responses should be only a few sentences.`,
             model, imageGeneration,
             maxLength: params.includes("d") ? 3000 : 3900,
             reasoningBudget: /* extraPerms && */ params.includes("r") ? 2048 : 160
