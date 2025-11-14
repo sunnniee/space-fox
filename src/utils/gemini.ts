@@ -5,6 +5,7 @@ import type { InlineData, PromptHistoryItem, PromptHistoryItemModelParts, Prompt
 import { convert } from "./convert.ts";
 import { wikipedia } from "./wikipedia.ts";
 import { search } from "./search.ts";
+import type { Result } from "./search.ts";
 import { convertCurrency } from "./convertcurrency.ts";
 
 type FunctionDefs = typeof functionDefs;
@@ -26,7 +27,7 @@ type FunctionParamMap = {
 
 // Your function implementations must match this signature:
 type FunctionImpls = {
-    [K in keyof FunctionParamMap]: (args: FunctionParamMap[K]) => Promise<any>;
+    [K in keyof FunctionParamMap]: (args: FunctionParamMap[K]) => Promise<object>;
 };
 
 type FunctionNames = (FunctionDefs[number]["name"])[];
@@ -182,7 +183,15 @@ const functionCalls: FunctionImpls = {
     }),
     convert_currency: async ({ amount_from, currency_from, currency_to }) =>
         await convertCurrency(amount_from, currency_from, currency_to),
-    search: async ({ query }) => await search(query),
+    search: async ({ query }) => {
+        const res = await search(query);
+        if (!res.results.length) return { error: res.comment || "Unknwon error" };
+        res.results.length = Math.min(res.results.length, 10);
+
+        const usefulProps = ["siteTitle", "title", "url", "description"];
+        return { comment: res.comment, results: res.results.map(r =>
+            Object.fromEntries(Object.entries(r).filter(([k]) => usefulProps.includes(k)))) };
+    },
     wolframalpha: async ({ query }) => await wolframalpha(query)
 };
 
@@ -377,14 +386,39 @@ export async function prompt(
     });
 }
 
+function escapeRegExp(string: string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 // TODO: image support untested cause im too broke for an image gen model
 export function geminiResponse(response: PromptResult, debugInfo?: PromptOptions): CreateMessageOptions {
-    const { text, images } = response.response;
+    let { text } = response.response;
+    const { images } = response.response;
     const container: MessageComponent = {
         type: ComponentTypes.CONTAINER,
         accentColor: 0x076EFF,
         components: []
     };
+
+    let match: RegExpMatchArray | null = null;
+    // eslint-disable-next-line no-cond-assign
+    while (match = text.match(/{{src:(?:(?<search>\d+);)?(?<res>\d+(?:,\d+)*)}}/m)) {
+        const groups = match.groups!;
+
+        let citedSources = "";
+        groups.res!.split(",").forEach(n => {
+            const searches = response.history.filter(r =>
+                r.parts[0] && "functionResponse" in r.parts[0] && r.parts[0].functionResponse.name === "search") as any[];
+            const search = searches[parseInt(groups.search ?? "1", 10) - 1];
+            if (!search) return;
+
+            const res = search.parts[0].functionResponse.response.results[parseInt(n, 10) - 1] as Result;
+            if (!res) return;
+            citedSources += `[[${n}](<${res.url}>)]`;
+        });
+
+        text = text.replace(new RegExp(` ?${escapeRegExp(match[0])}([^w\n])?`), "$1" + citedSources);
+    }
 
     if (text) container.components.push({
         type: ComponentTypes.TEXT_DISPLAY,

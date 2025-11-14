@@ -1,7 +1,6 @@
 import { ButtonStyles, ComponentTypes, MessageFlags } from "oceanic.js";
 import type { Message, MessageActionRow } from "oceanic.js";
 import { ComponentBuilder, EmbedBuilder } from "@oceanicjs/builders";
-import { PermissionTier } from "../permissions.ts";
 import { registerBang } from "../utils/bangs.ts";
 import { purgeOldValues } from "../utils/purge.ts";
 import { client } from "../client.ts";
@@ -63,7 +62,6 @@ registerBang({
     title: "Search",
     names: ["search", "s", "lookup"],
     ignoreIfBlank: true,
-    restrict: [PermissionTier.FRIENDS, PermissionTier.ME],
     execute: async (content, _, ctx) => {
         const { results } = await search(content);
         if (!results?.length) return {

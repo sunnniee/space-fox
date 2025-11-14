@@ -42,20 +42,28 @@ registerBang({
         tools.push("basic_calculator", "convert_currency", "convert_unit");
         if (params.includes("s")) {
             tools.push("wikipedia", "search");
-            if ("WOLFRAMALPHA_API_KEY" in process.env) tools.push("wolframalpha");
+            if (extraPerms && "WOLFRAMALPHA_API_KEY" in process.env) tools.push("wolframalpha");
         }
-        const options: PromptOptions = {
-            systemPrompt: params.includes("l")
-                ? undefined
-                : `The current date and time is ${new Date().toUTCString()}.
+
+        let systemPrompt = `
+You are Gemini, a large language model. The current date and time is ${new Date().toUTCString()}.
 Basic markdown is supported: bold, italic, underline, strikethrough, headers, links, ordered and unordered lists.
 You can also use spoliers: ||spoiler text here|| and block quotes: > Hey!
 Anything else like images or tables are NOT supported.
 If you need to use the symbols >, |, _, *, ~, @, #, \`, put a backslash before them to escape them.
-If the user is chatting casually, your responses should be only a few sentences.`,
+If the user is chatting casually, your responses should be only a few sentences.`.trim();
+        if (tools.includes("search")) systemPrompt += `
+If you use search results in your response, cite them. You can do so by adding {{src:n,m,p}} \
+at the end of the sentence (after punctuation), where n, m, p are result indexes, counting from 1.
+If there were multiple search operatons done, specify which with {{src:n;1,2,3}}, also counting from 1.`;
+
+        const options: PromptOptions = {
+            systemPrompt: params.includes("l")
+                ? undefined
+                : systemPrompt,
             model, imageGeneration,
             maxLength: params.includes("d") ? 3000 : 3900,
-            reasoningBudget: /* extraPerms && */ params.includes("r") ? 2048 : 160
+            reasoningBudget: params.includes("r") ? 2048 : 160
         };
         const response = await prompt(content, attachments, tools, options);
 

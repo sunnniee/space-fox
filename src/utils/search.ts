@@ -27,7 +27,10 @@ export async function search(query: string): Promise<SearchReponse> {
     let results: Result[] = [];
     let comment: string | undefined = undefined;
     try {
-        if (req.status !== 200) throw new Error(`search: Got status code ${req.status}`);
+        if (req.status !== 200) {
+            comment = req.status.toString();
+            throw new Error(`search: Got status code ${req.status}`);
+        }
         const res = await req.text();
         const html = parse(res);
         results = html.querySelectorAll(".snippet:has(> .heading-serpresult)").map(el => ({
@@ -43,7 +46,8 @@ export async function search(query: string): Promise<SearchReponse> {
             const text = [...comments.querySelectorAll(".title, .subtitle")!].map(e => e.textContent);
             comment = text.join(". ").replace(/ +/g, " ").trim();
         }
-        if (!results[0]) throw undefined;
+        if (!("0" in results)) throw undefined;
+        else if (results.length === 0) comment = "No results found.\n" + comment || "";
     } catch(e) {
         if (e) console.log(e);
     }
