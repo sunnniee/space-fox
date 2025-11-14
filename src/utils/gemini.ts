@@ -402,7 +402,7 @@ export function geminiResponse(response: PromptResult, debugInfo?: PromptOptions
 
     let match: RegExpMatchArray | null = null;
     // eslint-disable-next-line no-cond-assign
-    while (match = text.match(/{{src:(?:(?<search>\d+);)?(?<res>\d+(?:,\d+)*)}}/m)) {
+    while (match = text.match(/{{src:(?:(?<search>\d+);)?(?<res>\d+(?:, ?\d+)*)}}/m)) {
         const groups = match.groups!;
 
         let citedSources = "";
@@ -414,7 +414,7 @@ export function geminiResponse(response: PromptResult, debugInfo?: PromptOptions
 
             const res = search.parts[0].functionResponse.response.results[parseInt(n, 10) - 1] as Result;
             if (!res) return;
-            citedSources += `[[${n}](<${res.url}>)]`;
+            citedSources += `[[${n}](<${res.url.replace(/ /g, "%20")}>)]`;
         });
 
         text = text.replace(new RegExp(` ?${escapeRegExp(match[0])}([^w\n])?`), "$1" + citedSources);
