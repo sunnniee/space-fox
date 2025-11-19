@@ -186,7 +186,7 @@ const functionCalls: FunctionImpls = {
     search: async ({ query }) => {
         const res = await search(query);
         if (!res.results.length) return { error: res.comment || "Unknwon error" };
-        res.results.length = Math.min(res.results.length, 10);
+        res.results.length = Math.min(res.results.length, 15);
 
         const usefulProps = ["siteTitle", "title", "url", "description"];
         return { comment: res.comment, results: res.results.map(r =>

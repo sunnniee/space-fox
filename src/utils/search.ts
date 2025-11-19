@@ -33,19 +33,33 @@ export async function search(query: string): Promise<SearchReponse> {
         }
         const res = await req.text();
         const html = parse(res);
-        results = html.querySelectorAll(".snippet:has(> .heading-serpresult)").map(el => ({
-            siteTitle: el.querySelector(".sitename")!.textContent,
+        results = html.querySelectorAll(".snippet:has(> .result-wrapper)").map(el => ({
+            siteTitle: el.querySelector(".site-name-content > .t-secondary")!.textContent,
             siteIcon: el.querySelector(".favicon")!.attrs.src!,
             title: el.querySelector(".title")!.textContent,
-            url: el.querySelector(".heading-serpresult")!.attrs.href!,
-            description: (el.querySelector(".snippet-description") || el.querySelector(".inline-qa-answer > p"))?.textContent || "[no description]"
+            url: el.querySelector(".l1")!.attrs.href!,
+            description: el.querySelector(".generic-snippet > .content")?.textContent
+                || el.querySelectorAll(".inline-qa-answer")?.map(a => a.textContent).join("\n\n")
+                || "[no description]"
         })) satisfies Result[];
+
+        const discussions = html.querySelectorAll(".discussions-item").map(el => ({
+            title: el.querySelector(".title")!.textContent,
+            siteTitle: el.querySelector(".item:has(> .favicon)")!.textContent,
+            siteIcon: el.querySelector(".favicon")!.attrs.src!,
+            description: el.querySelector(".content")!.textContent,
+            url: el.querySelector(".source")!.attrs.href!
+        })) satisfies Result[];
+
+        // rougly their spot in normal searches
+        results.splice(2, 0, ...discussions);
 
         const comments = html.querySelector("#advanced-keywords");
         if (comments) {
             const text = [...comments.querySelectorAll(".title, .subtitle")!].map(e => e.textContent);
             comment = text.join(". ").replace(/ +/g, " ").trim();
         }
+
         if (!("0" in results)) throw undefined;
         else if (results.length === 0) comment = "No results found.\n" + comment || "";
     } catch(e) {

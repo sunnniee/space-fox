@@ -38,7 +38,7 @@ function resultMessage(results: Result[], index: number, id: string, userId: str
             .setColor(0xCC813E)
             .setDescription(`
 ## [${result.title}](${result.url})
-${result.description}`)
+${result.description.substring(0, 4000)}`)
             .setFooter(`Result ${index + 1}/${results.length}`)
             .toJSON()],
         components: new ComponentBuilder<MessageActionRow>()
