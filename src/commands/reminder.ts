@@ -1,127 +1,21 @@
 import { ApplicationCommandOptionTypes, ApplicationCommandTypes, MessageFlags, TextInputStyles } from "oceanic.js";
-import type { CommandInteraction, ModalActionRow, ModalSubmitInteraction } from "oceanic.js";
+import type { ModalActionRow } from "oceanic.js";
 import { ComponentBuilder, EmbedBuilder } from "@oceanicjs/builders";
-import { client } from "../client.ts";
 import { ComponentHandlerTypes } from "../types.ts";
-import type { RemindersItem } from "../types.js";
-import { reminders } from "../utils/reminders.ts";
+import { addReminder, parseDate, reminders, utcTzRegex, userTimezones } from "../utils/reminders.ts";
 import { registerCommand } from "../utils/commands.ts";
-
-function parseDate(date: string): number | void {
-    if (!date.includes("M")) date = date.toLowerCase();
-    const parts = date.match(/(\d+|\D+)/g);
-    if (!parts || !parts.length) return;
-    if (!parseInt(parts[0], 10)) parts.shift();
-    if (parts.length % 2 === 1) return;
-
-    let time = 0;
-    const multipliers = {
-        second: 1,
-        minute: 60,
-        hour: 60 * 60,
-        day: 60 * 60 * 24,
-        week: 60 * 60 * 24 * 7,
-        month: 60 * 60 * 24 * 30,
-        year: 60 * 60 * 24 * 365
-    };
-    for (let i = 0; i < parts.length; i += 2) {
-        switch (parts[i + 1]!.replace(/[^a-zA-Z]/g, "")) {
-            case "s":
-            case "sec":
-            case "secs":
-            case "second":
-            case "seconds":
-                time += parseInt(parts[i]!, 10) * multipliers.second;
-                break;
-            case "m":
-            case "min":
-            case "mins":
-            case "minute":
-            case "minutes":
-                time += parseInt(parts[i]!, 10) * multipliers.minute;
-                break;
-            case "h":
-            case "hr":
-            case "hrs":
-            case "hour":
-            case "hours":
-                time += parseInt(parts[i]!, 10) * multipliers.hour;
-                break;
-            case "d":
-            case "day":
-            case "days":
-                time += parseInt(parts[i]!, 10) * multipliers.day;
-                break;
-            case "w":
-            case "wk":
-            case "wks":
-            case "week":
-            case "weeks":
-                time += parseInt(parts[i]!, 10) * multipliers.week;
-                break;
-            case "M":
-            case "mo":
-            case "mon":
-            case "month":
-            case "months":
-                time += parseInt(parts[i]!, 10) * multipliers.month;
-                break;
-            case "y":
-            case "yr":
-            case "yrs":
-            case "year":
-            case "years":
-                time += parseInt(parts[i]!, 10) * multipliers.year;
-                break;
-            default:
-                return;
-        }
-    }
-
-    return time;
-}
-
-const genUid = (n = 6) => Math.floor(Math.random() * 16 ** n).toString(16).padStart(n, "0");
-
-function addReminder(duration: number,
-    content: string,
-    ctx: CommandInteraction | ModalSubmitInteraction,
-    ephemeral = false): boolean {
-    const currentReminders = [...reminders.get(ctx.user.id) || []];
-    if (currentReminders.length >= 10) return false;
-    let uid: string;
-    while (true) {
-        uid = genUid();
-        if (currentReminders.every(r => r.uid !== uid)) break;
-    }
-
-    const reminder: RemindersItem[number] = {
-        uid,
-        at: Date.now() + duration * 1000,
-        duration,
-        content
-    };
-    if (ctx.guildID && client.guilds.has(ctx.guildID) && !ephemeral) {
-        reminder.channelID = ctx.channelID;
-        reminder.guildID = ctx.guildID;
-    }
-    currentReminders.push(reminder);
-    reminders.set(ctx.user.id, currentReminders);
-
-    return true;
-}
 
 registerCommand({
     name: "remindme",
     description: "Set a reminder",
     type: ApplicationCommandTypes.CHAT_INPUT,
     options: [{
-        name: "duration",
+        name: "when",
         description: "Duration of the reminder",
         type: ApplicationCommandOptionTypes.STRING,
         required: true
     }, {
-        name: "content",
+        name: "about",
         description: "Content of the reminder",
         type: ApplicationCommandOptionTypes.STRING,
         required: true
@@ -131,21 +25,22 @@ registerCommand({
         type: ApplicationCommandOptionTypes.BOOLEAN,
         required: false
     }],
+    execute: async (ctx, duration, content, ephemeral) => {
+        const result = parseDate(duration, ctx.user.id);
+        if (!result || result.error) {
+            return ctx.reply({
+                content: result?.error || "Couldn't parse that time",
+                flags: MessageFlags.EPHEMERAL
+            });
+        }
 
-    execute: async (ctx, durString, content, ephemeral) => {
-        const duration = parseDate(durString);
-        if (!duration) return ctx.reply({
-            content: "Failed to parse date",
-            flags: MessageFlags.EPHEMERAL
-        });
-
-        const success = addReminder(duration, content, ctx, ephemeral);
-        if (success) ctx.reply({
-            content: `<t:${Math.floor(Date.now() / 1000 + duration) + 2}:R>: ${content}`,
+        const uid = addReminder(result.duration, content, ctx, ephemeral);
+        if (uid) ctx.reply({
+            content: `<t:${Math.floor(Date.now() / 1000 + result.duration) + 2}:R>: ${content}`,
             flags: ephemeral ? MessageFlags.EPHEMERAL : 0
         });
         else ctx.reply({
-            content: "Failed to add reminder. This is most likely because you already have too many reminders.",
+            content: "Failed to add reminder. You likely have too many active reminders (max 10)",
             flags: MessageFlags.EPHEMERAL
         });
     }
@@ -186,22 +81,23 @@ registerCommand({
         type: ComponentHandlerTypes.MODAL,
         handle: async (ctx, durString, note, eph) => {
             const ephemeral = !!eph;
-            const duration = parseDate(durString);
-            if (!duration) return ctx.reply({
-                content: "Failed to parse date",
+            const result = parseDate(durString, ctx.user.id);
+
+            if (!result || result.error) return ctx.reply({
+                content: result?.error || "Couldn't parse that time",
                 flags: MessageFlags.EPHEMERAL
             });
 
             const messageID = ctx.data.customID.split("-").at(-1);
             const content = `https://discord.com/channels/${ctx.guildID}/${ctx.channelID}/${messageID} ` + note;
 
-            const success = addReminder(duration, content, ctx, ephemeral);
+            const success = addReminder(result.duration, content, ctx, ephemeral);
             if (success) ctx.reply({
-                content: `<t:${Math.floor(Date.now() / 1000 + duration) + 2}:R>: ${content}`,
+                content: `<t:${Math.floor(Date.now() / 1000 + result.duration) + 2}:R>: ${content}`,
                 flags: ephemeral ? MessageFlags.EPHEMERAL : 0
             });
             else ctx.reply({
-                content: "Failed to add reminder. This is most likely because you already have too many reminders.",
+                content: "Failed to add reminder. You likely have too many active reminders (max 10)",
                 flags: MessageFlags.EPHEMERAL
             });
         }
@@ -262,5 +158,51 @@ registerCommand({
             content: "👍️",
             flags: MessageFlags.EPHEMERAL
         });
+    }
+});
+
+registerCommand({
+    name: "reminders timezone",
+    type: ApplicationCommandTypes.CHAT_INPUT,
+    description: "Set or check your timezone",
+    options: [{
+        name: "zone",
+        description: "Timezone (like 'Europe/London' or 'UTC+2')",
+        type: ApplicationCommandOptionTypes.STRING,
+        required: false
+    }],
+    execute: async (ctx, zone) => {
+        if (!zone) {
+            const saved = userTimezones.get(ctx.user.id);
+            return ctx.reply({
+                content: saved
+                    ? `Your timezone is set to \`${saved}\``
+                    : "You haven't set a timezone yet",
+                flags: MessageFlags.EPHEMERAL
+            });
+        }
+
+        if (utcTzRegex.test(zone)) {
+            userTimezones.set(ctx.user.id, zone.toUpperCase());
+            return ctx.reply({
+                content: `Timezone set to \`${zone.toUpperCase()}\``,
+                flags: MessageFlags.EPHEMERAL
+            });
+        }
+
+        try {
+            Intl.DateTimeFormat(undefined, { timeZone: zone });
+            userTimezones.set(ctx.user.id, zone);
+            return ctx.reply({
+                content: `Timezone set to \`${zone}\``,
+                flags: MessageFlags.EPHEMERAL
+            });
+        } catch (err) {
+            return ctx.reply({
+                content: "Invalid timezone. Please use a valid [IANA code](<https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List>) \
+(`Europe/London`, `America/New_York`) or a UTC offset (`UTC+2`, `GMT-5:30`)",
+                flags: MessageFlags.EPHEMERAL
+            });
+        }
     }
 });

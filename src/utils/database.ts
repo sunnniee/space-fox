@@ -4,6 +4,7 @@ import path from "path";
 
 export class JSONDatabase<Schema> {
     private filePath: string;
+    private failedInit = false;
     private cache = {} as Record<string, Schema>;
     private writing = false;
     private writeQueued = false;
@@ -15,6 +16,7 @@ export class JSONDatabase<Schema> {
                 this.cache = JSON.parse(i) || {};
             } catch {
                 if (!process.env.SUPPRESS_WARNINGS) console.warn(`Failed to parse file ${this.filePath}`);
+                this.failedInit = true;
                 this.cache = {};
             }
         }).catch(() => {
@@ -23,6 +25,7 @@ export class JSONDatabase<Schema> {
     }
 
     private write = async () => {
+        if (this.failedInit) return;
         if (this.writing) return this.writeQueued = true;
         this.writing = true;
         writeFile(this.filePath, JSON.stringify(this.cache)).then(() => {

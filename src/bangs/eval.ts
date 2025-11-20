@@ -3,7 +3,7 @@ import { inspect } from "util";
 
 import { client } from "../client.ts";
 import * as globals from "../globals.ts";
-import { reminders } from "../utils/reminders.ts";
+import * as reminder from "../utils/reminders.ts";
 import type { Bang } from "../types.ts";
 import { PermissionTier } from "../permissions.ts";
 import { registerBang } from "../utils/bangs.ts";
