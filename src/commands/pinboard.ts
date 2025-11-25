@@ -634,7 +634,7 @@ registerCommand({
                 type: a.contentType,
                 description: a.description || ""
             }));
-        msg.embeds.forEach(async e => {
+        for await (const e of msg.embeds) {
             if (e.provider?.name === "Tenor") {
                 const url = await fetchTenorGif(e.url!);
                 media.push({
@@ -644,14 +644,22 @@ registerCommand({
                 });
             } else if ((e.type === "image" || e.type === "gifv"
                 || (e.type === "video" && e.provider?.name !== "YouTube")) && e.url) {
-                const { mime_type } = await attachmentUrlToImageInput(e.url);
                 media.push({
                     link: e.url,
-                    type: mime_type,
+                    type: (() => {
+                        switch (e.type) {
+                            case "image":
+                                return "image/png";
+                            case "gifv":
+                                return "image/gif";
+                            case "video":
+                                return "video/mp4";
+                        }
+                    })(),
                     description: ""
                 });
             }
-        });
+        }
 
         if (pins.find(p => p.messageId === msg.id)) return ctx.reply({
             content: "That message is already pinned!",
