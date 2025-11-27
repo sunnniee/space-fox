@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 
 export enum PermissionTier {
     ME = "me",
@@ -22,7 +22,9 @@ const groups: PermissionGroups = {
 
 let exists = false;
 try {
-    const file = readFileSync("./permissions.json", "utf8");
+    const file = existsSync("./data/permissions.json")
+        ? readFileSync("./data/permissions.json", "utf8")
+        : readFileSync("./permissions.json", "utf8");
     exists = true;
     const permissions = JSON.parse(file);
     if (!["me", "friends"].every(p => typeof permissions[p] === "object" || typeof permissions[p] === "undefined"))

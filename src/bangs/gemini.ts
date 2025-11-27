@@ -7,7 +7,7 @@ import type { PromptFunctions, PromptOptions } from "../types.js";
 registerBang({
     title: "Gemini",
     names: ["gemini", "gem", "ai"],
-    predicate: () => "GEMINI_API_KEY" in process.env,
+    predicate: () => !!process.env.GEMINI_API_KEY,
     ignoreIfBlank: true,
     takesParameters: true,
     paramSuggestions: {
@@ -42,7 +42,7 @@ registerBang({
         tools.push("basic_calculator", "convert_currency", "convert_unit");
         if (params.includes("s")) {
             tools.push("wikipedia", "search");
-            if (extraPerms && "WOLFRAMALPHA_API_KEY" in process.env) tools.push("wolframalpha");
+            if (extraPerms && process.env.WOLFRAMALPHA_API_KEY) tools.push("wolframalpha");
         }
 
         let systemPrompt = `

@@ -56,7 +56,7 @@ async function basicCalculator(input: string) {
 }
 
 async function wolframalpha(query: string) {
-    if (!("WOLFRAMALPHA_API_KEY" in process.env)) return { result: "Failed to evaluate" };
+    if (!process.env.WOLFRAMALPHA_API_KEY) return { result: "Failed to evaluate" };
 
     const req = await fetch(`https://www.wolframalpha.com/api/v1/llm-api?input=${encodeURIComponent(query)}\
 &appid=${process.env.WOLFRAMALPHA_API_KEY}`);

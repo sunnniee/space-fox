@@ -6,7 +6,7 @@ import { registerBang } from "../utils/bangs.ts";
 registerBang({
     title: "WolframAlpha",
     names: ["wolframalpha", "wa", "wolf"],
-    predicate: () => "WOLFRAMALPHA_API_KEY" in process.env,
+    predicate: () => !!process.env.WOLFRAMALPHA_API_KEY,
     restrict: [PermissionTier.ME, PermissionTier.FRIENDS],
     ignoreIfBlank: true,
     exampleQueries: ["sqrt of 1369", "28% of 3 km", "next solar eclipse", "value of MDCLXXIII"],

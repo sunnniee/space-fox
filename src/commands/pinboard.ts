@@ -442,7 +442,7 @@ registerCommand({
                     label: "Read the text in the image (OCR)",
                     value: "ocr"
                 }] satisfies SelectOption[];
-                if ("GEMINI_API_KEY" in process.env) options.push({
+                if (process.env.GEMINI_API_KEY) options.push({
                     label: "Let AI generate a description",
                     value: "generate"
                 });

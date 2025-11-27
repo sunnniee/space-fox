@@ -1,0 +1,12 @@
+services:
+  space-fox:
+    build:
+      context: .
+      target: production
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./data:/app/data

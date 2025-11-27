@@ -7,7 +7,7 @@ import { prompt } from "../utils/gemini.ts";
 registerCommand({
     name: "@grok is this true",
     type: ApplicationCommandTypes.MESSAGE,
-    predicate: () => "GEMINI_API_KEY" in process.env,
+    predicate: () => !!process.env.GEMINI_API_KEY,
     execute: async ctx => {
         ctx.defer();
         const { text } = (await prompt(ctx.data.target.content,

@@ -18,7 +18,7 @@ client.on("messageCreate", async msg => {
 
     const tools = [] as PromptFunctions;
     tools.push("basic_calculator", "convert_currency", "convert_unit", "wikipedia", "search");
-    if ("WOLFRAMALPHA_API_KEY" in process.env) tools.push("wolframalpha");
+    if (process.env.WOLFRAMALPHA_API_KEY) tools.push("wolframalpha");
 
     const response =
         await prompt(msg.content, msg.attachments.toArray(), tools, {
