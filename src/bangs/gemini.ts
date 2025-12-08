@@ -8,6 +8,7 @@ registerBang({
     title: "Gemini",
     names: ["gemini", "gem", "ai"],
     predicate: () => !!process.env.GEMINI_API_KEY,
+    restrict: [PermissionTier.ME, PermissionTier.FRIENDS],
     ignoreIfBlank: true,
     takesParameters: true,
     paramSuggestions: {
