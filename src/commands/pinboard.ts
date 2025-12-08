@@ -508,7 +508,6 @@ Do not answer with anything other than the description.",
                         [{ url: image.link, contentType: image.type }], [],
                         {
                             model: "gemma-3-27b-it",
-                            maxLength: 1000,
                         }
                     );
                     if (!res || !res.response.text) return ctx.reply({
@@ -516,7 +515,7 @@ Do not answer with anything other than the description.",
                         flags: MessageFlags.EPHEMERAL
                     });
 
-                    pin.content.media!.at(Number(pos))!.description = res.response.text;
+                    pin.content.media!.at(Number(pos))!.description = res.response.text.slice(0, 1000);
                     pin.searchableContent = generateSearchableContent(pin);
                     pinboard.pins.splice(index, 1, pin);
                     allPinboards.set(ctx.user.id, pinboard);

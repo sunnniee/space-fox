@@ -225,7 +225,6 @@ export async function prompt(
     options: PromptOptions = {}
 ): Promise<PromptResult> {
     const { systemPrompt = undefined,
-        maxLength = 3900,
         model = "gemini-2.5-flash",
         imageGeneration = false,
         history = [],
@@ -353,17 +352,7 @@ export async function prompt(
         };
         parts.forEach(p => {
             if ("text" in p) {
-                if (p.text.length < maxLength) response.text = p.text;
-                else {
-                    let { text } = p;
-                    text = text.slice(0, maxLength - 10);
-
-                    const codeblockParts = text.match(/```/g);
-                    if (codeblockParts && codeblockParts.length % 2 === 1) text += "```";
-                    text += " [...]";
-
-                    response.text = text;
-                }
+                response.text = p.text;
             } else if ("inline_data" in p) {
                 response.images.push(Buffer.from(p.inline_data.data, "base64"));
             }
@@ -391,7 +380,9 @@ function escapeRegExp(string: string) {
 }
 
 // TODO: image support untested cause im too broke for an image gen model
-export function geminiResponse(response: PromptResult, debugInfo?: PromptOptions): CreateMessageOptions {
+export function geminiResponse(response: PromptResult,
+    debugInfo?: PromptOptions,
+    maxLength = 3900): CreateMessageOptions {
     let { text } = response.response;
     const { images } = response.response;
     const container: MessageComponent = {
@@ -414,15 +405,62 @@ export function geminiResponse(response: PromptResult, debugInfo?: PromptOptions
 
             const res = search.parts[0].functionResponse.response.results[parseInt(n, 10) - 1] as Result;
             if (!res) return;
-            citedSources += `[[${n}](<${res.url.replace(/ /g, "%20")}>)]`;
+            citedSources += `[[${n.trim()}](<${res.url.replace(/ /g, "%20")}>)]`;
         });
 
         text = text.replace(new RegExp(` ?${escapeRegExp(match[0])}([^w\n])?`), "$1" + citedSources);
     }
 
+    const preTrimText = text;
+    if (text.length > maxLength) {
+        const appendage = " [...]";
+        let cutIndex = maxLength - appendage.length;
+
+        // Try to cut at a word boundary
+        const lastSpace = text.lastIndexOf(" ", cutIndex);
+        if (lastSpace !== -1) {
+            cutIndex = lastSpace;
+        }
+
+        let truncated = text.slice(0, cutIndex);
+
+        // Clean up broken source links: [[n](<url>)]
+        const lastSrcLinkStart = truncated.lastIndexOf("[[");
+        if (lastSrcLinkStart > -1) {
+            if (truncated.indexOf(")]", lastSrcLinkStart) === -1) {
+                truncated = truncated.slice(0, lastSrcLinkStart);
+            }
+        }
+
+        // Clean up broken markdown links: [text](url)
+        // Find the last potential start of a link body
+        const lastMdLinkBodyStart = truncated.lastIndexOf("](");
+        if (lastMdLinkBodyStart > -1) {
+            // Find the start of the link text
+            const lastMdLinkTextStart = truncated.lastIndexOf("[", lastMdLinkBodyStart);
+            // If the link seems broken (no closing paren and opening bracket exists)
+            if (lastMdLinkTextStart > -1 && truncated.indexOf(")", lastMdLinkBodyStart) === -1) {
+                truncated = truncated.slice(0, lastMdLinkTextStart);
+            }
+        }
+
+        // remove trailing whitespace from truncation
+        text = truncated.trimEnd();
+
+        const codeblockParts = text.match(/```/g);
+        if (codeblockParts && codeblockParts.length % 2 === 1) text += "\n```";
+        text += appendage;
+    }
+
     if (text) container.components.push({
         type: ComponentTypes.TEXT_DISPLAY,
         content: text
+    });
+    if (preTrimText.length > maxLength) container.components.push({
+        type: ComponentTypes.FILE,
+        file: {
+            url: "attachment://full_response.txt"
+        }
     });
     if (images.length) container.components.push({
         type: ComponentTypes.MEDIA_GALLERY,
@@ -453,7 +491,10 @@ Function calls: ${functionCalls.length ? `\n- ${functionCalls.join("\n- ")}` : "
 
     return {
         components: [container],
-        files: images.map((img, i) => ({ name: `image${i}.png`, contents: img })),
+        files: [...images.map((img, i) => ({ name: `image${i}.png`, contents: img }))]
+            .concat(preTrimText.length > maxLength
+                ? [{ name: "full_response.txt", contents: Buffer.from(preTrimText) }]
+                : []),
         flags: MessageFlags.IS_COMPONENTS_V2
     };
 }

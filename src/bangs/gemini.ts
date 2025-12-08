@@ -62,12 +62,13 @@ If there were multiple search operatons done, specify which with {{src:n;1,2,3}}
                 ? undefined
                 : systemPrompt,
             model, imageGeneration,
-            maxLength: params.includes("d") ? 3000 : 3900,
             reasoningBudget: params.includes("r") ? 2048 : 160
         };
         const response = await prompt(content, attachments, tools, options);
 
-        const res = geminiResponse(response, params.includes("d") ? options : undefined);
+        const res = geminiResponse(response,
+            params.includes("d") ? options : undefined,
+            params.includes("d") ? 3000 : 3900);
         return {
             content: res,
             afterSend: msg => {

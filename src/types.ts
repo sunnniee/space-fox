@@ -56,7 +56,6 @@ export type Bang = {
 
 export type PromptOptions = {
     systemPrompt?: string;
-    maxLength?: number;
     model?: string;
     imageGeneration?: boolean;
     history?: PromptHistoryItem[];
