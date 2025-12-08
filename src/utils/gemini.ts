@@ -232,7 +232,8 @@ export async function prompt(
     } = options;
 
     const messages = [...history];
-    if (content || attachments.length) {
+    const isRecursive = !(content || attachments.length);
+    if (!isRecursive) {
         const message: PromptHistoryItem = {
             role: "user",
             parts: []
@@ -259,11 +260,18 @@ export async function prompt(
             responseModalities: ["text"].concat(imageGeneration ? ["image"] : [])
         }
     } as any;
-    if (systemPrompt) body.system_instruction = {
-        parts: {
-            text: systemPrompt
-        }
-    };
+    if (systemPrompt) {
+        if (model.includes("gemma") && !isRecursive)
+            messages.unshift({
+                role: "user",
+                parts: [{ text: systemPrompt }]
+            });
+        else body.system_instruction = {
+            parts: {
+                text: systemPrompt
+            }
+        };
+    }
     if (model.startsWith("gemini-2.5")) body.generationConfig.thinkingConfig = {
         thinkingBudget: reasoningBudget
     };

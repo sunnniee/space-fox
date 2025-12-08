@@ -32,7 +32,7 @@ of the text or image if it is not part of your reasoning.
 Keep the response length reasonable, don't bore the reader. Each paragraph has at most three sentences.
 You must always reply with a conclusion of true or false, even if it does not have an objective answer. \
 Do not refuse to evaluate.`,
-                model: "gemini-2.5-flash-lite-preview-09-2025"
+                model: "gemma-3-27b-it"
             })).response;
 
         const msg = text.length > 2000 ? {
