@@ -1,4 +1,4 @@
-import { Attachment, CommandInteraction, Message, User } from "oceanic.js";
+import { Attachment, CommandInteraction, Message, Role, User } from "oceanic.js";
 import type { AnyInteractionChannel, ApplicationCommandOptionsWithValue, ApplicationCommandOptionTypes, ApplicationCommandTypes, AutocompleteInteraction, ComponentInteraction, ComponentTypes, CreateApplicationCommandOptions, CreateMessageOptions, ModalSubmitInteraction, Uncached } from "oceanic.js";
 import type { PermissionTier } from "./permissions.ts";
 import type { prompt } from "./utils/gemini.ts";
@@ -107,6 +107,11 @@ export type OptionTypeMapping = {
     [ApplicationCommandOptionTypes.INTEGER]: number;
     [ApplicationCommandOptionTypes.NUMBER]: number;
     [ApplicationCommandOptionTypes.BOOLEAN]: boolean;
+    [ApplicationCommandOptionTypes.USER]: User;
+    [ApplicationCommandOptionTypes.CHANNEL]: AnyInteractionChannel;
+    [ApplicationCommandOptionTypes.ROLE]: Role;
+    [ApplicationCommandOptionTypes.MENTIONABLE]: User | Role;
+    [ApplicationCommandOptionTypes.ATTACHMENT]: Attachment;
 };
 
 export type OptionsToArgs<T extends readonly ApplicationCommandOptionsWithValue[]> = {
