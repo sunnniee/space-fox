@@ -1,7 +1,47 @@
-import type { CommandInteraction, ModalSubmitInteraction } from "oceanic.js";
+import { ButtonStyles, ComponentTypes, MessageFlags } from "oceanic.js";
+import type { CommandInteraction, ModalSubmitInteraction, ComponentInteraction, Message, MessageActionRow } from "oceanic.js";
 import { client } from "../client.ts";
+import { allComponentHandlers } from "../globals.ts";
+import { ComponentHandlerTypes } from "../types.ts";
 import type { RemindersItem } from "../types.ts";
 import { JSONDatabase } from "./database.ts";
+import { purgeOldValues } from "./purge.ts";
+
+const activeReminderMessages: Record<string, { message: Message; at: number }> = {};
+purgeOldValues(activeReminderMessages, 300_000, ({ message }) => {
+    message.edit({
+        components: (message.components as MessageActionRow[]).map(row => ({
+            ...row,
+            components: row.components.map(btn => ({ ...btn, disabled: true }))
+        }))
+    }).catch(() => { });
+});
+
+allComponentHandlers.push({
+    match: /^reminders-snooze-\d+-\d+$/,
+    type: ComponentHandlerTypes.BUTTON,
+    handle: async (ctx: ComponentInteraction<ComponentTypes.BUTTON>) => {
+        const parts = ctx.data.customID.split("-");
+        const duration = parseInt(parts[2]!, 10);
+        const originalUser = parts[3]!;
+
+        if (ctx.user.id !== originalUser) {
+            return ctx.createMessage({
+                content: "You cannot snooze this reminder",
+                flags: MessageFlags.EPHEMERAL
+            });
+        }
+
+        const contentMatch = ctx.message.content.match(/: (.*)$/);
+        const content = contentMatch ? contentMatch[1] : "Reminder";
+        addReminder(duration, content!, ctx, true);
+
+        return ctx.createMessage({
+            content: `Snoozed for ${duration / 60} minutes`,
+            flags: MessageFlags.EPHEMERAL
+        });
+    }
+});
 
 export const reminders = new JSONDatabase<RemindersItem>("data/reminders.json");
 export const userTimezones = new JSONDatabase<string>("data/timezones.json");
@@ -98,6 +138,11 @@ export function parseDate(input: string, userId: string): { duration: number; er
         }
     }
 
+    // turn two numbers into a timestamp (17 30 -> 17:30)
+    if (input.match(/^\d{1,2} \d{2}$/)) {
+        input = input.replace(" ", ":");
+    }
+
     // handle hard timestamps (17:30)
     const timeRegex = /^(\d{1,2})(?::(\d{2}))?(?:\s*(am|pm))?$/i;
     const timeMatch = input.match(timeRegex);
@@ -148,7 +193,7 @@ const genUid = (n = 6) => Math.floor(Math.random() * 16 ** n).toString(16).padSt
 
 export function addReminder(duration: number,
     content: string,
-    ctx: CommandInteraction | ModalSubmitInteraction,
+    ctx: CommandInteraction | ModalSubmitInteraction | ComponentInteraction,
     ephemeral = false) {
     const currentReminders = [...reminders.get(ctx.user.id) || []];
     if (currentReminders.length >= 10) return;
@@ -175,19 +220,44 @@ export function addReminder(duration: number,
 }
 
 async function sendReminder(userID: string, reminder: RemindersItem[number]) {
+    const components = [{
+        type: ComponentTypes.ACTION_ROW,
+        components: [
+            {
+                type: ComponentTypes.BUTTON,
+                style: ButtonStyles.SECONDARY,
+                label: "Snooze (10m)",
+                customID: `reminders-snooze-600-${userID}`
+            },
+            {
+                type: ComponentTypes.BUTTON,
+                style: ButtonStyles.SECONDARY,
+                label: "Snooze (1h)",
+                customID: `reminders-snooze-3600-${userID}`
+            }
+        ]
+    }] satisfies MessageActionRow[];
+
     try {
+        let msg: Message | undefined | void;
         if (reminder.channelID && reminder.guildID) {
-            client.sendMessage(reminder.channelID, {
+            msg = await client.sendMessage(reminder.channelID, {
                 content: `<@${userID}> <t:${Math.floor(Date.now() / 1000 - reminder.duration)}:R>: ${reminder.content}`,
-                allowedMentions: { users: true }
-            }).catch(() => { });
+                allowedMentions: { users: true },
+                components
+            });
         } else {
             const dm = await client.rest.users.createDM(userID);
 
-            dm.createMessage({
+            msg = await dm.createMessage({
                 content: `<t:${Math.floor(Date.now() / 1000 - reminder.duration)}:R>: ${reminder.content}`,
-                allowedMentions: { users: true }
+                allowedMentions: { users: true },
+                components
             }).catch(() => { });
+        }
+
+        if (msg) {
+            activeReminderMessages[msg.id] = { message: msg, at: Date.now() };
         }
     } catch (e) { }
 }
