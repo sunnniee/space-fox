@@ -416,7 +416,8 @@ export function geminiResponse(response: PromptResult,
             citedSources += `[[${n.trim()}](<${res.url.replace(/ /g, "%20")}>)]`;
         });
 
-        text = text.replace(new RegExp(` ?${escapeRegExp(match[0])}([^w\n])?`), "$1" + citedSources);
+        // eslint-disable-next-line no-useless-escape
+        text = text.replace(new RegExp(` ?${escapeRegExp(match[0])}([^\w\n])?`), "$1" + citedSources);
     }
 
     const preTrimText = text;
