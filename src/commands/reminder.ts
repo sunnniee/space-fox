@@ -89,7 +89,7 @@ registerCommand({
             });
 
             const messageID = ctx.data.customID.split("-").at(-1);
-            const content = `https://discord.com/channels/${ctx.guildID}/${ctx.channelID}/${messageID} ` + note;
+            const content = `https://discord.com/channels/${ctx.guildID || "@me"}/${ctx.channelID}/${messageID} ` + note;
 
             const success = addReminder(result.duration, content, ctx, ephemeral);
             if (success) ctx.reply({
