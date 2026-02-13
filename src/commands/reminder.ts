@@ -1,9 +1,10 @@
-import { ApplicationCommandOptionTypes, ApplicationCommandTypes, MessageFlags, TextInputStyles } from "oceanic.js";
-import type { ModalActionRow } from "oceanic.js";
-import { ComponentBuilder, EmbedBuilder } from "@oceanicjs/builders";
+import { ApplicationCommandOptionTypes, ApplicationCommandTypes, ComponentTypes, MessageFlags, TextInputStyles } from "oceanic.js";
+import type { ModalComponent } from "oceanic.js";
+import { EmbedBuilder } from "@oceanicjs/builders";
 import { ComponentHandlerTypes } from "../types.ts";
 import { addReminder, parseDate, reminders, utcTzRegex, userTimezones } from "../utils/reminders.ts";
 import { registerCommand } from "../utils/commands.ts";
+import { client } from "../client.ts";
 
 registerCommand({
     name: "remindme",
@@ -50,37 +51,54 @@ registerCommand({
     name: "Remind me later",
     type: ApplicationCommandTypes.MESSAGE,
     execute: async ctx => {
-        ctx.createModal({
-            title: "Set a reminder",
-            customID: `reminder-modal-${ctx.data.target.id}`,
-            components: new ComponentBuilder<ModalActionRow>()
-                .addTextInput({
-                    label: "Remind me in",
+        const components = [
+            {
+                type: ComponentTypes.LABEL,
+                label: "Remind me in",
+                component: {
+                    type: ComponentTypes.TEXT_INPUT,
                     customID: "duration",
                     style: TextInputStyles.SHORT,
                     required: true
-                })
-                .addTextInput({
-                    label: "Add a note",
+                }
+            },
+            {
+                type: ComponentTypes.LABEL,
+                label: "Add a note",
+                component: {
+                    type: ComponentTypes.TEXT_INPUT,
                     customID: "note",
                     style: TextInputStyles.PARAGRAPH,
                     maxLength: 1000,
                     required: false
-                })
-                .addTextInput({
-                    label: "Hide from others? (type anything)",
-                    customID: "ephemeral",
-                    style: TextInputStyles.SHORT,
-                    required: false
-                })
-                .toJSON()
+                }
+            }
+        ] as ModalComponent[];
+        if (ctx.guildID && client.guilds.has(ctx.guildID)) components.push({
+            type: ComponentTypes.LABEL,
+            label: "Reminder response",
+            component: {
+                type: ComponentTypes.STRING_SELECT,
+                customID: "ephemeral",
+                options: [
+                    { label: "Visible to everyone", value: "false" },
+                    { label: "Hidden (ephemeral)", value: "true" }
+                ],
+                required: false
+            }
+        });
+
+        ctx.createModal({
+            title: "Set a reminder",
+            customID: `reminder-modal-${ctx.data.target.id}`,
+            components
         });
     },
     componentHandlers: [{
         match: /^reminder-modal-/,
         type: ComponentHandlerTypes.MODAL,
-        handle: async (ctx, durString, note, eph) => {
-            const ephemeral = !!eph;
+        handle: async (ctx, durString: string, note: string, eph: string[]) => {
+            const ephemeral = eph ? eph[0] === "true" : true;
             const result = parseDate(durString, ctx.user.id);
 
             if (!result || result.error) return ctx.reply({

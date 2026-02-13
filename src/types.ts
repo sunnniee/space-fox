@@ -1,5 +1,15 @@
 import { Attachment, CommandInteraction, Message, Role, User } from "oceanic.js";
-import type { AnyInteractionChannel, ApplicationCommandOptionsWithValue, ApplicationCommandOptionTypes, ApplicationCommandTypes, AutocompleteInteraction, ComponentInteraction, ComponentTypes, CreateApplicationCommandOptions, CreateMessageOptions, ModalSubmitInteraction, Uncached } from "oceanic.js";
+import type { AnyInteractionChannel,
+    ApplicationCommandOptionsWithValue,
+    ApplicationCommandOptionTypes,
+    ApplicationCommandTypes,
+    AutocompleteInteraction,
+    ComponentInteraction,
+    ComponentTypes,
+    CreateApplicationCommandOptions,
+    CreateMessageOptions,
+    ModalSubmitInteraction,
+    Uncached } from "oceanic.js";
 import type { PermissionTier } from "./permissions.ts";
 import type { prompt } from "./utils/gemini.ts";
 
@@ -29,11 +39,15 @@ export type StringSelectComponentHandler = {
     type: ComponentHandlerTypes.STRING_SELECT;
     handle: (ctx: ComponentInteraction<ComponentTypes.STRING_SELECT>, value: string) => Promise<any>;
 };
+
+// TODO
+// type ModalValues = string | string[] | User[] | InteractionResolvedChannel[] | (User | Role)[] | Attachment[];
 export type ModalComponentHandler = {
     match: RegExp;
     type: ComponentHandlerTypes.MODAL;
-    handle: (ctx: ModalSubmitInteraction, ...input: string[]) => Promise<any>;
+    handle: (ctx: ModalSubmitInteraction, ...values: any[]) => Promise<any>;
 };
+
 export type ComponentHandler = ButtonComponentHandler | StringSelectComponentHandler | ModalComponentHandler;
 
 export type Bang = {

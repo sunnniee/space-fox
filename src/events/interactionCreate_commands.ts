@@ -73,8 +73,28 @@ client.on("interactionCreate", async ctx => {
     } else if (ctx.isModalSubmitInteraction()) {
         allComponentHandlers.forEach(async handler => {
             if (handler.type === ComponentHandlerTypes.MODAL && handler.match.test(ctx.data.customID)) {
+                const inputFields = ctx.data.components.raw;
+                const args = inputFields.map(field => {
+                    const input = "components" in field ? field.components[0]! : field.component;
+                    if (input.type === ComponentTypes.TEXT_INPUT)
+                        return input.value;
+                    else if (input.type === ComponentTypes.STRING_SELECT)
+                        return input.values;
+                    else if (input.type === ComponentTypes.USER_SELECT)
+                        return input.values.map(v => ctx.data.resolved.users.get(v)!);
+                    else if (input.type === ComponentTypes.CHANNEL_SELECT)
+                        return input.values.map(v => ctx.data.resolved.channels.get(v)!);
+                    else if (input.type === ComponentTypes.ROLE_SELECT)
+                        return input.values.map(v => ctx.data.resolved.roles.get(v)!);
+                    else if (input.type === ComponentTypes.MENTIONABLE_SELECT)
+                        return input.values.map(v => ctx.data.resolved.users.get(v)!
+                            ?? ctx.data.resolved.roles.get(v)!);
+                    else if (input.type === ComponentTypes.FILE_UPLOAD)
+                        return input.values.map(v => ctx.data.resolved.attachments.get(v)!);
+                    return null;
+                }).filter(v => v !== null);
                 return await handler
-                    .handle(ctx, ...ctx.data.components.raw.flatMap(v => v.components.map(c => c.value)))
+                    .handle(ctx, ...args)
                     .catch(e => handleError(ctx, e, MessageFlags.EPHEMERAL));
             }
         });

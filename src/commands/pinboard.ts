@@ -530,7 +530,7 @@ Do not answer with anything other than the description.",
     }, {
         match: /^pinboard-modal-/,
         type: ComponentHandlerTypes.MODAL,
-        handle: async (ctx, description) => {
+        handle: async (ctx, description: string) => {
             const [, , id, pos] = ctx.data.customID.split("-");
             const pinboard = allPinboards.get(ctx.user.id, true);
             const pin = pinboard.pins.find(p => p.id === Number(id))!;

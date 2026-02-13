@@ -147,7 +147,7 @@ registerBang({
     }, {
         match: /^ocrmodal-/,
         type: ComponentHandlerTypes.MODAL,
-        handle: async (ctx, language) => {
+        handle: async (ctx, language: string) => {
             const [, id] = ctx.data.customID.split("-");
             if (!id || id !== ctx.user.id) return ctx.deferUpdate();
             if (!ctx.message || ctx.message.components[0]?.type !== ComponentTypes.CONTAINER) return ctx.deferUpdate();
