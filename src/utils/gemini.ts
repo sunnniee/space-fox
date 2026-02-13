@@ -11,7 +11,7 @@ import { convertCurrency } from "./convertcurrency.ts";
 type FunctionDefs = typeof functionDefs;
 
 // Step 1: Convert JSON Schema types to TS types
-type JSONSchemaType = { type: "string" | "number" | "boolean" };
+interface JSONSchemaType { type: "string" | "number" | "boolean" }
 
 type SchemaToTS<T extends Record<string, JSONSchemaType>> = {
     [K in keyof T]: T[K]["type"] extends "string" ? string
@@ -372,15 +372,13 @@ export async function prompt(
             response,
             history: messages
         };
-    })).catch(e => {
-        return {
-            response: {
-                text: `Failed to generate: \`${errorMessage(e)}\``,
-                images: []
-            },
-            history: []
-        };
-    });
+    })).catch(e => ({
+        response: {
+            text: `Failed to generate: \`${errorMessage(e)}\``,
+            images: []
+        },
+        history: []
+    }));
 }
 
 function escapeRegExp(string: string) {

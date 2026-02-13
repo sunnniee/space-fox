@@ -5,7 +5,7 @@ export enum PermissionTier {
     FRIENDS = "friends",
     EVERYONE = "everyone"
 }
-type PermissionGroupItem = { users?: string[]; guilds?: string[] };
+interface PermissionGroupItem { users?: string[]; guilds?: string[] }
 type PermissionGroups = Record<PermissionTier, PermissionGroupItem>;
 
 const groups: PermissionGroups = {

@@ -1,5 +1,4 @@
-import { Attachment, CommandInteraction, Message, Role, User } from "oceanic.js";
-import type { AnyInteractionChannel,
+import type { Attachment, CommandInteraction, Message, Role, User, AnyInteractionChannel,
     ApplicationCommandOptionsWithValue,
     ApplicationCommandOptionTypes,
     ApplicationCommandTypes,
@@ -14,11 +13,11 @@ import type { PermissionTier } from "./permissions.ts";
 import type { prompt } from "./utils/gemini.ts";
 
 export type NonEmptyArray<T> = [T, ...T[]];
-export type BangResult = {
+export interface BangResult {
     content: CreateMessageOptions | string;
     link?: string;
     afterSend?: (msg: Message<AnyInteractionChannel | Uncached>) => any;
-};
+}
 
 export type Context = Message<AnyInteractionChannel | Uncached>
     | (CommandInteraction<AnyInteractionChannel | Uncached> & { author: User });
@@ -29,28 +28,28 @@ export enum ComponentHandlerTypes {
     STRING_SELECT
 }
 
-export type ButtonComponentHandler = {
+export interface ButtonComponentHandler {
     match: RegExp;
     type: ComponentHandlerTypes.BUTTON;
     handle: (ctx: ComponentInteraction<ComponentTypes.BUTTON>) => Promise<any>;
-};
-export type StringSelectComponentHandler = {
+}
+export interface StringSelectComponentHandler {
     match: RegExp;
     type: ComponentHandlerTypes.STRING_SELECT;
     handle: (ctx: ComponentInteraction<ComponentTypes.STRING_SELECT>, value: string) => Promise<any>;
-};
+}
 
 // TODO
 // type ModalValues = string | string[] | User[] | InteractionResolvedChannel[] | (User | Role)[] | Attachment[];
-export type ModalComponentHandler = {
+export interface ModalComponentHandler {
     match: RegExp;
     type: ComponentHandlerTypes.MODAL;
     handle: (ctx: ModalSubmitInteraction, ...values: any[]) => Promise<any>;
-};
+}
 
 export type ComponentHandler = ButtonComponentHandler | StringSelectComponentHandler | ModalComponentHandler;
 
-export type Bang = {
+export interface Bang {
     title: string;
     names: NonEmptyArray<string>;
     predicate?: () => boolean;
@@ -66,20 +65,20 @@ export type Bang = {
         ctx: Context,
         parameter?: string
     ) => Promise<BangResult>;
-};
+}
 
-export type PromptOptions = {
+export interface PromptOptions {
     systemPrompt?: string;
     model?: string;
     imageGeneration?: boolean;
     history?: PromptHistoryItem[];
     reasoningBudget?: number;
-};
+}
 
-export type InlineData = {
+export interface InlineData {
     mime_type: string;
     data: string;
-};
+}
 export type PromptHistoryItemUserParts = { text: string }
     | { inline_data: InlineData }
     | { functionResponse: { name: string; response: any } };
@@ -88,23 +87,23 @@ export type PromptHistoryItemModelParts = { text: string }
     | { functionCall: { name: string; args: any } };
 export type PromptHistoryItemParts = PromptHistoryItemUserParts | PromptHistoryItemModelParts;
 
-export type PromptHistoryUserItem = {
+export interface PromptHistoryUserItem {
     role: "user";
     parts: PromptHistoryItemUserParts[];
-};
-export type PromptHistoryModelItem = {
+}
+export interface PromptHistoryModelItem {
     role: "model";
     parts: PromptHistoryItemModelParts[];
-};
+}
 export type PromptHistoryItem = PromptHistoryUserItem | PromptHistoryModelItem;
 
-export type PromptResult = {
+export interface PromptResult {
     response: {
         text: string;
         images: Buffer[];
     };
     history: PromptHistoryItem[];
-};
+}
 export type PromptFunctions = Exclude<Parameters<typeof prompt>["2"], "all">;
 
 export type RemindersItem = {
@@ -116,7 +115,7 @@ export type RemindersItem = {
     channelID?: string;
 }[];
 
-export type OptionTypeMapping = {
+export interface OptionTypeMapping {
     [ApplicationCommandOptionTypes.STRING]: string;
     [ApplicationCommandOptionTypes.INTEGER]: number;
     [ApplicationCommandOptionTypes.NUMBER]: number;
@@ -126,7 +125,7 @@ export type OptionTypeMapping = {
     [ApplicationCommandOptionTypes.ROLE]: Role;
     [ApplicationCommandOptionTypes.MENTIONABLE]: User | Role;
     [ApplicationCommandOptionTypes.ATTACHMENT]: Attachment;
-};
+}
 
 export type OptionsToArgs<T extends readonly ApplicationCommandOptionsWithValue[]> = {
     [K in keyof T]: T[K] extends ApplicationCommandOptionsWithValue

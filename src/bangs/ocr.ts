@@ -31,9 +31,8 @@ registerBang({
 
         const images = await Promise.all(imgs.map(i => attachmentUrlToImageInput(i.url)));
         const startDuration = performance.now();
-        const res = await Promise.all(images.map(async i => {
-            return ocr(Buffer.from(i.data, "base64")).then(data => ({ data, duration: performance.now() }));
-        }));
+        const res = await Promise.all(images.map(async i =>
+            ocr(Buffer.from(i.data, "base64")).then(data => ({ data, duration: performance.now() }))));
 
         const container = {
             type: ComponentTypes.CONTAINER,

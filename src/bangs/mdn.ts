@@ -7,14 +7,14 @@ import { formatAndAddLinkButton, registerBang } from "../utils/bangs.ts";
 import { purgeOldValues } from "../utils/purge.ts";
 import { ComponentHandlerTypes } from "../types.ts";
 
-type SearchResult = {
+interface SearchResult {
     documents: {
         mdn_url: string;
         title: string;
         slug: string;
         summary: string;
     }[];
-};
+}
 
 let messageNr = Math.floor(Math.random() * 10 ** 7);
 const messages: Record<string, {

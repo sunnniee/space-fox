@@ -1,17 +1,17 @@
 import { parse } from "node-html-parser";
 
-export type Result = {
+export interface Result {
     siteTitle: string;
     siteIcon: string;
     title: string;
     url: string;
     description: string;
-};
+}
 
-export type SearchReponse = {
+export interface SearchReponse {
     results: Result[];
     comment?: string;
-};
+}
 
 export async function search(query: string): Promise<SearchReponse> {
     const req = await fetch(

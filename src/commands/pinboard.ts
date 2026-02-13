@@ -405,7 +405,7 @@ registerCommand({
                         type: ComponentTypes.STRING_SELECT,
                         customID: `pinboard-select-${id}`,
                         options: pin.content.media!.map((img, i) => ({
-                            label: `Image #${i + 1} - ${img.description?.length! > 75
+                            label: `Image #${i + 1} - ${img.description && img.description.length > 75
                                 ? img.description!.slice(0, 75) + "..."
                                 : img.description || "[no description]"}`,
                             value: i.toString()
@@ -633,7 +633,7 @@ registerCommand({
                 type: a.contentType,
                 description: a.description || ""
             }));
-        for await (const e of msg.embeds) {
+        for (const e of msg.embeds) {
             if (e.provider?.name === "Tenor") {
                 const url = await fetchTenorGif(e.url!);
                 media.push({

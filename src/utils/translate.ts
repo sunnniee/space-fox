@@ -1,4 +1,4 @@
-type Response = { sourceLanguage: string; translation: string };
+interface Response { sourceLanguage: string; translation: string }
 
 export async function googleTranslate(text: string, targetLang: string) {
     // stolen from vencord

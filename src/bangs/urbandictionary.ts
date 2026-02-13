@@ -2,7 +2,7 @@ import { EmbedBuilder } from "@oceanicjs/builders";
 
 import { registerBang } from "../utils/bangs.ts";
 
-type SearchResponse = {
+interface SearchResponse {
     list: {
         definiton: string;
         example: string;
@@ -10,7 +10,7 @@ type SearchResponse = {
         thumbs_up: string;
         thumbs_down: string;
     }[];
-};
+}
 
 registerBang({
     title: "Urban Dictionary",

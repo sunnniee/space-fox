@@ -45,7 +45,7 @@ registerBang({
                 }
 
                 return { content: "```js\n" + result + "```" };
-            }).catch(e => { return { content: reportError(e) }; });
+            }).catch(e => ({ content: reportError(e) }));
         } catch (e) {
             if (e instanceof Error)
                 return { content: reportError(e) };

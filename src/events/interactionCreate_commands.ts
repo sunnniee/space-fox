@@ -87,7 +87,7 @@ client.on("interactionCreate", async ctx => {
                     else if (input.type === ComponentTypes.ROLE_SELECT)
                         return input.values.map(v => ctx.data.resolved.roles.get(v)!);
                     else if (input.type === ComponentTypes.MENTIONABLE_SELECT)
-                        return input.values.map(v => ctx.data.resolved.users.get(v)!
+                        return input.values.map(v => ctx.data.resolved.users.get(v)
                             ?? ctx.data.resolved.roles.get(v)!);
                     else if (input.type === ComponentTypes.FILE_UPLOAD)
                         return input.values.map(v => ctx.data.resolved.attachments.get(v)!);

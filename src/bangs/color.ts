@@ -3,10 +3,10 @@ import { MessageFlags } from "oceanic.js";
 import { EmbedBuilder } from "@oceanicjs/builders";
 import { registerBang } from "../utils/bangs.ts";
 
-type Color = {
+interface Color {
     rgb: [number, number, number];
     hsl: [number, number, number];
-};
+}
 
 const CSS_COLOR_NAMES = {
     aliceblue: "#f0f8ff", antiquewhite: "#faebd7", aqua: "#00ffff", aquamarine: "#7fffd4", azure: "#f0ffff",
@@ -202,8 +202,8 @@ const crcTable = new Int32Array(256).map((_, i) => {
 
 function crc32(buffer: Buffer) {
     let crc = -1;
-    for (let i = 0; i < buffer.length; i++) {
-        crc = (crc >>> 8) ^ crcTable[(crc ^ buffer[i]!) & 0xff]!;
+    for (const byte of buffer) {
+        crc = (crc >>> 8) ^ crcTable[(crc ^ byte!) & 0xff]!;
     }
     return (crc ^ -1) >>> 0;
 }

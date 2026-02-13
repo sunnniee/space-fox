@@ -2,13 +2,13 @@ import { EmbedBuilder } from "@oceanicjs/builders";
 
 import { registerBang } from "../utils/bangs.ts";
 
-type SearchResponse = {
+interface SearchResponse {
     pages: {
         id: number;
         key: string;
         title: string;
     }[];
-};
+}
 
 registerBang({
     title: "Arch Linux wiki",
