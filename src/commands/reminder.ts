@@ -4,7 +4,6 @@ import { EmbedBuilder } from "@oceanicjs/builders";
 import { ComponentHandlerTypes } from "../types.ts";
 import { addReminder, parseDate, reminders, utcTzRegex, userTimezones } from "../utils/reminders.ts";
 import { registerCommand } from "../utils/commands.ts";
-import { client } from "../client.ts";
 
 registerCommand({
     name: "remindme",
@@ -72,21 +71,21 @@ registerCommand({
                     maxLength: 1000,
                     required: false
                 }
+            },
+            {
+                type: ComponentTypes.LABEL,
+                label: "Reminder response",
+                component: {
+                    type: ComponentTypes.STRING_SELECT,
+                    customID: "ephemeral",
+                    options: [
+                        { label: "Visible to everyone", value: "false" },
+                        { label: "Hidden (ephemeral)", value: "true" }
+                    ],
+                    required: false
+                }
             }
-        ] as ModalComponent[];
-        if (ctx.guildID && client.guilds.has(ctx.guildID)) components.push({
-            type: ComponentTypes.LABEL,
-            label: "Reminder response",
-            component: {
-                type: ComponentTypes.STRING_SELECT,
-                customID: "ephemeral",
-                options: [
-                    { label: "Visible to everyone", value: "false" },
-                    { label: "Hidden (ephemeral)", value: "true" }
-                ],
-                required: false
-            }
-        });
+        ] satisfies ModalComponent[];
 
         ctx.createModal({
             title: "Set a reminder",
