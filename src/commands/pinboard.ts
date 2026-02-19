@@ -220,15 +220,15 @@ registerCommand({
         autocomplete: true,
         required: false
     }],
-    autocomplete: async (ctx, query) => {
-        if (!query || !query.length) return ctx.result([]);
+    autocomplete: async (ctx, { search }) => {
+        if (!search || !search.length) return ctx.result([]);
         const pinboard = allPinboards.get(ctx.user.id);
         if (!pinboard || !pinboard.pins.length) return ctx.result([]);
 
         const scorer = new QuickScore(pinboard.pins, {
             keys: ["searchableContent"]
         });
-        const results = scorer.search(query);
+        const results = scorer.search(search);
 
         const matches = [] as AutocompleteChoice[];
 
@@ -275,7 +275,7 @@ registerCommand({
 
         return ctx.result(matches);
     },
-    execute: async (ctx, search) => {
+    execute: async (ctx, { search }) => {
         const pinboard = allPinboards.get(ctx.user.id);
         if (!pinboard || !pinboard.pins.length) return ctx.reply({
             content: "Your pinboard is empty! This is a place to keep useful messages for later - add one by selecting a message and clicking `Apps > Add to pinboard`"
@@ -530,7 +530,7 @@ Do not answer with anything other than the description.",
     }, {
         match: /^pinboard-modal-/,
         type: ComponentHandlerTypes.MODAL,
-        handle: async (ctx, description: string) => {
+        handle: async (ctx, { description }) => {
             const [, , id, pos] = ctx.data.customID.split("-");
             const pinboard = allPinboards.get(ctx.user.id, true);
             const pin = pinboard.pins.find(p => p.id === Number(id))!;

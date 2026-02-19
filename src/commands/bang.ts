@@ -35,7 +35,7 @@ registerCommand({
         required: false
     }],
 
-    autocomplete: async (ctx, content) => {
+    autocomplete: async (ctx, { content }) => {
         if (!content) return ctx.result(getBangExamples());
 
         const validBang = matchBang(content);
@@ -148,7 +148,7 @@ registerCommand({
         }
     },
 
-    execute: async (ctx, _content, ephemeral) => {
+    execute: async (ctx, { content: _content, ephemeral }) => {
         const matchOutput = matchBang(_content);
         if (!matchOutput)
             return ctx.reply({ content: errorMsg, flags: MessageFlags.EPHEMERAL });

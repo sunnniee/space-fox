@@ -25,7 +25,7 @@ registerCommand({
         type: ApplicationCommandOptionTypes.BOOLEAN,
         required: false
     }],
-    execute: async (ctx, duration, content, ephemeral) => {
+    execute: async (ctx, { when: duration, about: content, ephemeral }) => {
         const result = parseDate(duration, ctx.user.id);
         if (!result || result.error) {
             return ctx.reply({
@@ -96,7 +96,7 @@ registerCommand({
     componentHandlers: [{
         match: /^reminder-modal-/,
         type: ComponentHandlerTypes.MODAL,
-        handle: async (ctx, durString: string, note: string, eph: string[]) => {
+        handle: async (ctx, { duration: durString, note, ephemeral: eph }) => {
             const ephemeral = eph ? eph[0] === "true" : true;
             const result = parseDate(durString, ctx.user.id);
 
@@ -154,7 +154,7 @@ registerCommand({
         type: ApplicationCommandOptionTypes.STRING,
         required: true
     }],
-    execute: async (ctx, id) => {
+    execute: async (ctx, { id }) => {
         const reminderList = reminders.get(ctx.user.id) || [];
         const newReminderList = reminderList.filter(r => r.uid !== id.trim());
 
@@ -188,7 +188,7 @@ registerCommand({
         type: ApplicationCommandOptionTypes.STRING,
         required: false
     }],
-    execute: async (ctx, zone) => {
+    execute: async (ctx, { zone }) => {
         if (!zone) {
             const saved = userTimezones.get(ctx.user.id);
             return ctx.reply({

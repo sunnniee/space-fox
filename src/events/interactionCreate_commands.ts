@@ -19,28 +19,28 @@ client.on("interactionCreate", async ctx => {
                     else optionsToParse = [];
                 }
 
-                const input = optionsToParse.map(option => {
+                const input: Record<string, any> = {};
+                for (const option of optionsToParse) {
                     if (option.type === ApplicationCommandOptionTypes.USER) {
-                        return ctx.data.resolved.users.get(option.value);
+                        input[option.name] = ctx.data.resolved.users.get(option.value);
                     } else if (option.type === ApplicationCommandOptionTypes.CHANNEL) {
-                        return ctx.data.resolved.channels.get(option.value);
+                        input[option.name] = ctx.data.resolved.channels.get(option.value);
                     } else if (option.type === ApplicationCommandOptionTypes.ROLE) {
-                        return ctx.data.resolved.roles.get(option.value);
+                        input[option.name] = ctx.data.resolved.roles.get(option.value);
                     } else if (option.type === ApplicationCommandOptionTypes.MENTIONABLE) {
-                        return ctx.data.resolved.users.get(option.value)
+                        input[option.name] = ctx.data.resolved.users.get(option.value)
                             ?? ctx.data.resolved.roles.get(option.value);
                     } else if (option.type === ApplicationCommandOptionTypes.ATTACHMENT) {
-                        return ctx.data.resolved.attachments.get(option.value);
+                        input[option.name] = ctx.data.resolved.attachments.get(option.value);
                     } else if ("value" in option) {
-                        return option.value;
+                        input[option.name] = option.value;
                     }
-                    return null;
-                }).filter(v => v !== null);
+                }
 
                 if (subcommand)
-                    return await cmd.execute[subcommand]!(ctx, ...input)
+                    return await cmd.execute[subcommand]!(ctx, input)
                         .catch(e => handleError(ctx, e, MessageFlags.EPHEMERAL));
-                else return await cmd.execute[basicCommandExecute]!(ctx, ...input)
+                else return await cmd.execute[basicCommandExecute]!(ctx, input)
                     .catch(e => handleError(ctx, e, MessageFlags.EPHEMERAL));
             }
         });
@@ -58,43 +58,44 @@ client.on("interactionCreate", async ctx => {
                     else optionsToParse = [];
                 }
 
-                const input = optionsToParse.map(option => {
+                const input: Record<string, any> = {};
+                for (const option of optionsToParse) {
                     if ("value" in option) {
-                        return option.value;
+                        input[option.name] = option.value;
                     }
-                    return null;
-                }).filter(v => v !== null);
+                }
 
                 if (subcommand)
-                    return await cmd.autocomplete[subcommand]!(ctx, ...input);
-                else return await cmd.autocomplete[basicCommandExecute]!(ctx, ...input);
+                    return await cmd.autocomplete[subcommand]!(ctx, input);
+                else return await cmd.autocomplete[basicCommandExecute]!(ctx, input);
             }
         });
     } else if (ctx.isModalSubmitInteraction()) {
         allComponentHandlers.forEach(async handler => {
             if (handler.type === ComponentHandlerTypes.MODAL && handler.match.test(ctx.data.customID)) {
                 const inputFields = ctx.data.components.raw;
-                const args = inputFields.map(field => {
+                const args: Record<string, any> = {};
+                for (const field of inputFields) {
                     const input = "components" in field ? field.components[0]! : field.component;
+                    if (!input.customID) continue;
                     if (input.type === ComponentTypes.TEXT_INPUT)
-                        return input.value;
+                        args[input.customID] = input.value;
                     else if (input.type === ComponentTypes.STRING_SELECT)
-                        return input.values;
+                        args[input.customID] = input.values;
                     else if (input.type === ComponentTypes.USER_SELECT)
-                        return input.values.map(v => ctx.data.resolved.users.get(v)!);
+                        args[input.customID] = input.values.map(v => ctx.data.resolved.users.get(v)!);
                     else if (input.type === ComponentTypes.CHANNEL_SELECT)
-                        return input.values.map(v => ctx.data.resolved.channels.get(v)!);
+                        args[input.customID] = input.values.map(v => ctx.data.resolved.channels.get(v)!);
                     else if (input.type === ComponentTypes.ROLE_SELECT)
-                        return input.values.map(v => ctx.data.resolved.roles.get(v)!);
+                        args[input.customID] = input.values.map(v => ctx.data.resolved.roles.get(v)!);
                     else if (input.type === ComponentTypes.MENTIONABLE_SELECT)
-                        return input.values.map(v => ctx.data.resolved.users.get(v)
+                        args[input.customID] = input.values.map(v => ctx.data.resolved.users.get(v)
                             ?? ctx.data.resolved.roles.get(v)!);
                     else if (input.type === ComponentTypes.FILE_UPLOAD)
-                        return input.values.map(v => ctx.data.resolved.attachments.get(v)!);
-                    return null;
-                }).filter(v => v !== null);
+                        args[input.customID] = input.values.map(v => ctx.data.resolved.attachments.get(v)!);
+                }
                 return await handler
-                    .handle(ctx, ...args)
+                    .handle(ctx, args)
                     .catch(e => handleError(ctx, e, MessageFlags.EPHEMERAL));
             }
         });

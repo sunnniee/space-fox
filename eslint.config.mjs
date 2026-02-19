@@ -112,7 +112,7 @@ export default defineConfig([globalIgnores(["**/dist"]), {
         "stylistic/function-call-spacing": ["error", "never"],
         "stylistic/function-paren-newline": ["error", "consistent"],
         "stylistic/indent": ["error", 4, { SwitchCase: 1 }],
-        "stylistic/indent-binary-ops": ["error", 4],
+        // "stylistic/indent-binary-ops": ["error", 4],
         "stylistic/key-spacing": ["error", { "mode": "strict" }],
         "stylistic/keyword-spacing": ["error"],
         "stylistic/linebreak-style": ["error", "unix"],

@@ -44,7 +44,7 @@ export interface StringSelectComponentHandler {
 export interface ModalComponentHandler {
     match: RegExp;
     type: ComponentHandlerTypes.MODAL;
-    handle: (ctx: ModalSubmitInteraction, ...values: any[]) => Promise<any>;
+    handle: (ctx: ModalSubmitInteraction, values: Record<string, any>) => Promise<any>;
 }
 
 export type ComponentHandler = ButtonComponentHandler | StringSelectComponentHandler | ModalComponentHandler;
@@ -137,6 +137,21 @@ export type OptionsToArgs<T extends readonly ApplicationCommandOptionsWithValue[
         : never
 };
 
+export type OptionsToObject<T extends readonly ApplicationCommandOptionsWithValue[]> =
+    T extends readonly [infer First, ...infer Rest]
+        ? First extends ApplicationCommandOptionsWithValue
+            ? Rest extends readonly ApplicationCommandOptionsWithValue[]
+                ? {
+                    [K in First["name"]]: First["type"] extends keyof OptionTypeMapping
+                        ? First["required"] extends false
+                            ? OptionTypeMapping[First["type"]] | undefined
+                            : OptionTypeMapping[First["type"]]
+                        : never
+                } & OptionsToObject<Rest>
+                : never
+            : never
+        : Record<string, never>;
+
 export interface ChatInputCommand<
     C extends typeof ApplicationCommandTypes.CHAT_INPUT,
     O extends readonly ApplicationCommandOptionsWithValue[]
@@ -146,10 +161,11 @@ export interface ChatInputCommand<
     description: string;
     predicate?: () => boolean;
     options?: O;
-    execute: (ctx: CommandInteraction<AnyInteractionChannel | Uncached, C>, ...args: OptionsToArgs<O>) => Promise<any>;
+    execute: (ctx: CommandInteraction<AnyInteractionChannel | Uncached, C>,
+        options: OptionsToObject<O>) => Promise<any>;
     componentHandlers?: ComponentHandler[];
     autocomplete?: (ctx: AutocompleteInteraction<AnyInteractionChannel | Uncached>,
-        ...args: Partial<OptionsToArgs<O>>) => Promise<any>;
+        options: Partial<OptionsToObject<O>>) => Promise<any>;
 }
 
 export interface ContextMenuCommand<
