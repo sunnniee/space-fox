@@ -1,9 +1,10 @@
 import type { Context } from "vm";
 import { ApplicationCommandOptionTypes, ApplicationCommandTypes, MessageFlags } from "oceanic.js";
+import type { AutocompleteChoice, AutocompleteInteraction } from "oceanic.js";
 import { handleError, registerCommand } from "../utils/commands.ts";
 import { bangRegex, bangs, bangInputs } from "../globals.ts";
 import { bangsByTitle, canUseBang, formatAndAddLinkButton, getBangExamples } from "../utils/bangs.ts";
-import type { NonEmptyArray } from "../types.ts";
+import type { Bang, NonEmptyArray } from "../types.ts";
 
 const errorMsg = "Couldn't find that bang or no bang specified";
 const bangAtStartRegex = /^!([\w-]+)\s?(.*)/si;
@@ -16,6 +17,28 @@ function matchBang(content: string): RegExpMatchArray | null {
         [matchOutput[1], matchOutput[2]] = [matchOutput[2], matchOutput[1]];
     }
     return matchOutput;
+}
+
+async function sendBangAutocompleteChoices(bang: Bang, input: string, ctx: AutocompleteInteraction) {
+    if (!bang.autocomplete) throw new Error("Bang does not have autocomplete choices");
+
+    const suggestions = await bang.autocomplete(input);
+    const response = [] as AutocompleteChoice[];
+    for (const { content, parameter } of suggestions) {
+        const queryPart = content ? `${content} ` : "";
+        if (parameter)
+            response.push({
+                name: `${queryPart}!${bang.names[0]}-${parameter} (${bang.title}, ${bang.paramSuggestions?.[parameter] ?? "unknown"})`,
+                value: `${queryPart}!${bang.names[0]}-${parameter}`
+            });
+        else
+            response.push({
+                name: `${queryPart}!${bang.names[0]} (${bang.title})`,
+                value: `${queryPart}!${bang.names[0]}`
+            });
+    }
+
+    return await ctx.result(response.filter(res => res.name.length <= 100).slice(0, 8));
 }
 
 registerCommand({
@@ -64,6 +87,9 @@ registerCommand({
             if (bangList.length === 1 || hasExactMatch) {
                 const [title, aliases] = bangList[0]!;
                 const bang = bangs[aliases[0]]!;
+                if (bang.autocomplete)
+                    return void sendBangAutocompleteChoices(bang, content, ctx);
+
                 if (bang.takesParameters && bang.paramSuggestions) {
                     let i = 1;
                     for (const [param, suggestion] of Object.entries(bang.paramSuggestions)) {
@@ -73,23 +99,14 @@ registerCommand({
                 }
             }
 
-            let tooLong = false;
-            const res = bangList.slice(0, 8).map(([title, aliases]) => {
+            const res = bangList.map(([title, aliases]) => {
                 const queryPart = content ? `${content} ` : "";
                 return {
                     name: `${queryPart}!${aliases[0]} (${title})`,
                     value: `${queryPart}!${aliases[0]}`
                 };
-            }).filter(e => {
-                if (e.name.length > 100) tooLong = true;
-                return e.name.length <= 100;
-            });
+            }).filter(e => e.name.length <= 100).slice(0, 8);
 
-            if (!res.length && tooLong)
-                return ctx.result([{
-                    name: "[input too long for autocomplete]",
-                    value: "unknown"
-                }]);
             return ctx.result(res);
 
         } else {
@@ -124,7 +141,6 @@ registerCommand({
                 [entries[i], entries[j]] = [entries[j], entries[i]];
             }
 
-            let tooLong = false;
             choices.push(
                 ...entries.map(([title, aliases]) => {
                     const queryPart = content ? `${content} ` : "";
@@ -132,19 +148,10 @@ registerCommand({
                         name: `${queryPart}!${aliases[0]} (${title})`,
                         value: `${queryPart}!${aliases[0]}`
                     };
-                }).filter(e => {
-                    if (e.name.length > 100) tooLong = true;
-                    return e.name.length <= 100;
-                })
+                }).filter(e => e.name.length <= 100)
             );
 
-            if (!choices.length && tooLong)
-                return ctx.result([{
-                    name: "[input too long for autocomplete]",
-                    value: "unknown"
-                }]);
             return ctx.result(choices.slice(0, 8));
-
         }
     },
 
@@ -186,7 +193,7 @@ registerCommand({
                         flags: MessageFlags.EPHEMERAL
                     });
                 const response = output.content, { link } = output;
-                let flags = typeof response === "string" ? 0 : response.flags!;
+                let flags = typeof response === "string" ? 0 : response.flags ?? 0;
                 if (ephemeral) flags |= MessageFlags.EPHEMERAL;
 
                 ctx.reply({

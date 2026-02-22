@@ -58,6 +58,7 @@ export interface Bang {
     takesParameters?: boolean;
     paramSuggestions?: Record<string, string>;
     exampleQueries?: string[];
+    autocomplete?: (input?: string) => Promise<{ content: string; parameter?: string }[]>;
     restrict?: PermissionTier[];
     componentHandlers?: ComponentHandler[];
     execute: (content: string,
