@@ -1,6 +1,6 @@
 import type { Context } from "vm";
 import { ApplicationCommandOptionTypes, ApplicationCommandTypes, MessageFlags } from "oceanic.js";
-import type { AutocompleteChoice, AutocompleteInteraction } from "oceanic.js";
+import type { AutocompleteChoice } from "oceanic.js";
 import { handleError, registerCommand } from "../utils/commands.ts";
 import { bangRegex, bangs, bangInputs } from "../globals.ts";
 import { bangsByTitle, canUseBang, formatAndAddLinkButton, getBangExamples } from "../utils/bangs.ts";
@@ -19,7 +19,7 @@ function matchBang(content: string): RegExpMatchArray | null {
     return matchOutput;
 }
 
-async function sendBangAutocompleteChoices(bang: Bang, input: string, ctx: AutocompleteInteraction) {
+async function getBangAutocompleteChoices(bang: Bang, input: string) {
     if (!bang.autocomplete) throw new Error("Bang does not have autocomplete choices");
 
     const suggestions = await bang.autocomplete(input);
@@ -38,7 +38,7 @@ async function sendBangAutocompleteChoices(bang: Bang, input: string, ctx: Autoc
             });
     }
 
-    return await ctx.result(response.filter(res => res.name.length <= 100).slice(0, 8));
+    return response.filter(res => res.name.length <= 100).slice(0, 8);
 }
 
 registerCommand({
@@ -87,8 +87,11 @@ registerCommand({
             if (bangList.length === 1 || hasExactMatch) {
                 const [title, aliases] = bangList[0]!;
                 const bang = bangs[aliases[0]]!;
-                if (bang.autocomplete)
-                    return void sendBangAutocompleteChoices(bang, content, ctx);
+                if (bang.autocomplete) {
+                    const choices = await getBangAutocompleteChoices(bang, content);
+                    if (choices.length)
+                        return void ctx.result(choices);
+                }
 
                 if (bang.takesParameters && bang.paramSuggestions) {
                     let i = 1;
@@ -107,7 +110,7 @@ registerCommand({
                 };
             }).filter(e => e.name.length <= 100).slice(0, 8);
 
-            return ctx.result(res);
+            return void ctx.result(res);
 
         } else {
             const entries = bangsArray.filter(([, a]) =>
@@ -151,7 +154,7 @@ registerCommand({
                 }).filter(e => e.name.length <= 100)
             );
 
-            return ctx.result(choices.slice(0, 8));
+            return void ctx.result(choices.slice(0, 8));
         }
     },
 
