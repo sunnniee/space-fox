@@ -7,6 +7,7 @@ import type { Attachment, CommandInteraction, Message, Role, User, AnyInteractio
     ComponentTypes,
     CreateApplicationCommandOptions,
     CreateMessageOptions,
+    ModalComponent,
     ModalSubmitInteraction,
     Uncached } from "oceanic.js";
 import type { PermissionTier } from "./permissions.ts";
@@ -39,12 +40,46 @@ export interface StringSelectComponentHandler {
     handle: (ctx: ComponentInteraction<ComponentTypes.STRING_SELECT>, value: string) => Promise<any>;
 }
 
-// TODO
-// type ModalValues = string | string[] | User[] | InteractionResolvedChannel[] | (User | Role)[] | Attachment[];
-export interface ModalComponentHandler {
+interface ModalInputValueMap {
+    [ComponentTypes.TEXT_INPUT]: string;
+    [ComponentTypes.STRING_SELECT]: string[];
+    [ComponentTypes.USER_SELECT]: User[];
+    [ComponentTypes.CHANNEL_SELECT]: AnyInteractionChannel[];
+    [ComponentTypes.ROLE_SELECT]: Role[];
+    [ComponentTypes.MENTIONABLE_SELECT]: (User | Role)[];
+    [ComponentTypes.FILE_UPLOAD]: Attachment[];
+}
+
+type ModalInputComponentFromSchemaItem<S> =
+    S extends { type: ComponentTypes.ACTION_ROW; components: readonly (infer C)[] } ? C
+        : S extends { type: ComponentTypes.LABEL; component: infer C } ? C
+            : never;
+
+type ModalFieldEntry<S> =
+    ModalInputComponentFromSchemaItem<S> extends infer C
+        ? C extends { customID: infer ID extends string; type: infer CT extends keyof ModalInputValueMap }
+            ? {
+                customID: ID;
+                required: C extends { required: false } ? false : true;
+                value: ModalInputValueMap[CT];
+            }
+            : never
+        : never;
+
+export type ModalValuesFromSchema<S extends readonly ModalComponent[]> = {
+    [Field in ModalFieldEntry<S[number]> as Field extends { required: true } ? Field["customID"] : never]: Field["value"];
+} & {
+    [Field in ModalFieldEntry<S[number]> as Field extends { required: false } ? Field["customID"] : never]: Field["value"] | undefined;
+};
+
+export interface ModalComponentHandler<
+    S extends readonly ModalComponent[] | undefined = readonly ModalComponent[] | undefined
+> {
     match: RegExp;
     type: ComponentHandlerTypes.MODAL;
-    handle: (ctx: ModalSubmitInteraction, values: Record<string, any>) => Promise<any>;
+    schema?: S;
+    handle: (ctx: ModalSubmitInteraction,
+        values: S extends readonly ModalComponent[] ? ModalValuesFromSchema<S> : Record<string, any>) => Promise<any>;
 }
 
 export type ComponentHandler = ButtonComponentHandler | StringSelectComponentHandler | ModalComponentHandler;

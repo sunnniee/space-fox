@@ -1,8 +1,18 @@
 import { ApplicationCommandOptionTypes, ApplicationCommandTypes, ButtonStyles, ComponentTypes, MessageFlags, TextInputStyles } from "oceanic.js";
-import type { AutocompleteChoice, ComponentInteraction, ContainerComponent, Embed, InteractionContent, SelectOption, TextButton, URLButton } from "oceanic.js";
+import type {
+    AutocompleteChoice,
+    ComponentInteraction,
+    ContainerComponent,
+    Embed,
+    InteractionContent,
+    ModalComponent,
+    SelectOption,
+    TextButton,
+    URLButton
+} from "oceanic.js";
 import { ComponentBuilder } from "@oceanicjs/builders";
 import { QuickScore } from "quick-score";
-import { registerCommand } from "../utils/commands.ts";
+import { typedModalHandler, registerCommand } from "../utils/commands.ts";
 import { JSONDatabase } from "../utils/database.ts";
 import { ocr } from "../utils/ocr.ts";
 import { attachmentUrlToImageInput, prompt } from "../utils/gemini.ts";
@@ -57,6 +67,26 @@ const colors = [
     0x313244
 ] as const;
 const randomColor = () => colors[Math.floor(Math.random() * colors.length)];
+
+const pinboardDescriptionModalSchema = [{
+    type: ComponentTypes.LABEL,
+    label: "New description",
+    component: {
+        type: ComponentTypes.TEXT_INPUT,
+        customID: "description",
+        style: TextInputStyles.PARAGRAPH,
+        maxLength: 1000,
+        required: false
+    }
+}] as const satisfies readonly ModalComponent[];
+const pinboardDescriptionModal = (value?: string, placeholder?: string) => [{
+    ...pinboardDescriptionModalSchema[0],
+    component: {
+        ...pinboardDescriptionModalSchema[0].component,
+        value,
+        placeholder
+    }
+}];
 
 function generateSearchableContent(pin: PinboardItem) {
     return `${pin.content.text || ""}
@@ -193,19 +223,7 @@ function descriptionModal(ctx: ComponentInteraction,
     return ctx.createModal({
         title: "Edit Image Description",
         customID: `pinboard-modal-${pin.id}-${imageIndex}`,
-        components: [{
-            type: ComponentTypes.ACTION_ROW,
-            components: [{
-                type: ComponentTypes.TEXT_INPUT,
-                customID: "description",
-                label: "New description",
-                style: TextInputStyles.PARAGRAPH,
-                maxLength: 1000,
-                value,
-                placeholder,
-                required: false
-            }]
-        }]
+        components: pinboardDescriptionModal(value, placeholder)
     });
 }
 
@@ -527,9 +545,10 @@ Do not answer with anything other than the description.",
                 }
             }
         }
-    }, {
+    }, typedModalHandler({
         match: /^pinboard-modal-/,
         type: ComponentHandlerTypes.MODAL,
+        schema: pinboardDescriptionModalSchema,
         handle: async (ctx, { description }) => {
             const [, , id, pos] = ctx.data.customID.split("-");
             const pinboard = allPinboards.get(ctx.user.id, true);
@@ -546,7 +565,7 @@ Do not answer with anything other than the description.",
                 flags: MessageFlags.EPHEMERAL
             });
         }
-    }, {
+    }), {
         match: /^pinboard-delete-/,
         type: ComponentHandlerTypes.BUTTON,
         handle: async ctx => {

@@ -1,15 +1,23 @@
 import { ApplicationCommandOptionTypes, ApplicationCommandTypes, ApplicationIntegrationTypes, InteractionContextTypes } from "oceanic.js";
 import type {
     ApplicationCommandOptionsWithOptions, ApplicationCommandOptionsWithValue,
+    ModalComponent,
     CommandInteraction,
     ComponentInteraction,
     CreateApplicationCommandOptions, CreateChatInputApplicationCommandOptions,
     ModalSubmitInteraction
 } from "oceanic.js";
 import { allComponentHandlers, commands } from "../globals.ts";
-import type { Command } from "../types.js";
+import type { Command, ModalComponentHandler } from "../types.ts";
 
 export const basicCommandExecute = Symbol("basicCommandExecute");
+
+// TODO: avoid this
+export function typedModalHandler<const S extends readonly ModalComponent[] | undefined>(
+    handler: ModalComponentHandler<S>
+): ModalComponentHandler<S> {
+    return handler;
+}
 
 function isChatInputCommand<O extends readonly ApplicationCommandOptionsWithValue[]>(
     command: Command<ApplicationCommandTypes, O>
