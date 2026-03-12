@@ -32,15 +32,15 @@ registerBang({
     execute: async (content, attachments, ctx, parameter) => {
         const params = parameter?.toLowerCase().split("") || [];
         const imageGeneration = params.includes("i");
-        let model = "gemini-2.5-flash-lite-preview-09-2025";
+        let model = "gemini-3.1-flash-lite-preview";
         const extraPerms = [PermissionTier.ME, PermissionTier.FRIENDS]
             .includes(getPermissionTier(ctx.author, ctx.guildID));
         if (extraPerms && !params.includes("q"))
             if (imageGeneration) model = "gemini-2.0-flash-preview-image-generation";
-            else model = "gemini-2.5-flash-preview-09-2025";
+            else model = "gemini-3-flash-preview";
 
         const tools = [] as PromptFunctions;
-        tools.push("basic_calculator", "convert_currency", "convert_unit");
+        tools.push("convert_currency", "convert_unit");
         if (params.includes("s")) {
             tools.push("wikipedia", "search");
             if (extraPerms && process.env.WOLFRAMALPHA_API_KEY) tools.push("wolframalpha");
@@ -63,7 +63,7 @@ If there were multiple search operatons done, specify which with {{src:n;1,2,3}}
                 ? undefined
                 : systemPrompt,
             model, imageGeneration,
-            reasoningBudget: params.includes("r") ? 2048 : 160
+            reasoning: params.includes("r")
         };
         const response = await prompt(content, attachments, tools, options);
 

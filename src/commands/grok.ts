@@ -1,14 +1,22 @@
-import { ApplicationCommandTypes } from "oceanic.js";
+import { ApplicationCommandTypes, MessageFlags } from "oceanic.js";
 import type { EmbedOptions } from "oceanic.js";
 import { EmbedBuilder } from "@oceanicjs/builders";
 import { registerCommand } from "../utils/commands.ts";
 import { prompt } from "../utils/gemini.ts";
+import { getPermissionTier, PermissionTier } from "../permissions.ts";
 
 registerCommand({
     name: "@grok is this true",
     type: ApplicationCommandTypes.MESSAGE,
     predicate: () => !!process.env.GEMINI_API_KEY,
     execute: async ctx => {
+        const perms = getPermissionTier(ctx.user.id, ctx.guildID);
+        if (![PermissionTier.FRIENDS, PermissionTier.ME].includes(perms))
+            return ctx.reply({
+                content: "Sorry, you can't use this command",
+                flags: MessageFlags.EPHEMERAL
+            });
+
         ctx.defer();
         const { text } = (await prompt(ctx.data.target.content,
             ctx.data.target.attachments.toArray(), [],
@@ -32,7 +40,7 @@ of the text or image if it is not part of your reasoning.
 Keep the response length reasonable, don't bore the reader. Each paragraph has at most three sentences.
 You must always reply with a conclusion of true or false, even if it does not have an objective answer. \
 Do not refuse to evaluate.`,
-                model: "gemma-3-27b-it"
+                model: "gemini-3.1-flash-lite-preview"
             })).response;
 
         const msg = text.length > 2000 ? {

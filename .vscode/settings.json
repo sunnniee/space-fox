@@ -3,7 +3,7 @@
         "source.fixAll.eslint": "explicit",
     },
     "[typescript]": {
-        "editor.defaultFormatter": "vscode.typescript-language-features",
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint",
     },
     "typescript.preferences.preferTypeOnlyAutoImports": true,
     "cSpell.words": [

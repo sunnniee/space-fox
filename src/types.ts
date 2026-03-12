@@ -108,7 +108,7 @@ export interface PromptOptions {
     model?: string;
     imageGeneration?: boolean;
     history?: PromptHistoryItem[];
-    reasoningBudget?: number;
+    reasoning?: boolean;
 }
 
 export interface InlineData {

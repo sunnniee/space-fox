@@ -32,29 +32,6 @@ type FunctionImpls = {
 
 type FunctionNames = (FunctionDefs[number]["name"])[];
 
-async function basicCalculator(input: string) {
-    if (input.length > 2000) return { error: "Failed to calculate" };
-    let res: number;
-    try {
-        const sanitized = input.replace(/[^\d+\-*/%.,()[\]e]/g, "")
-            .replace(/\[/g, "(").replace(/\]/g, ")")
-            .replace(/,/g, ".")
-            .replace(/\++/g, "+")
-            // e.g. 1 - -2 -> 1--2 -> 1+2
-            .replace(/-+/g, m => m.length % 2 === 0 ? "+" : "-")
-            .replace(/\/+/g, "/")
-            .replace(/e+/g, "e")
-            .replace(/\(\)/g, "");
-        if (sanitized.includes("e(")) return { error: "Failed to calculate" };
-        res = eval(sanitized);
-    } catch {
-        return { error: "Failed to calculate" };
-    }
-
-    if (typeof res === "number") return { value: res.toString() };
-    else return { error: "Failed to calculate" };
-}
-
 async function wolframalpha(query: string) {
     if (!process.env.WOLFRAMALPHA_API_KEY) return { result: "Failed to evaluate" };
 
@@ -78,20 +55,6 @@ const functionDefs = [{
             }
         },
         required: ["query"]
-    }
-}, {
-    name: "basic_calculator",
-    description: "Perform basic maths. Supports only addition, subtraction, multiplication, division exponentiation (via the ** symbol only) \
-and modulo (%). Only use round parenthesis ().",
-    parameters: {
-        type: "object",
-        properties: {
-            input: {
-                type: "string",
-                description: "The expression to evaluate"
-            }
-        },
-        required: ["input"]
     }
 }, {
     name: "convert_unit",
@@ -170,14 +133,12 @@ chemistry, physics, geography, history, art, astronomy, and more. Only use this 
     }
 }] as const;
 const concurrentQueryFunctionDefs = [
-    "basic_calculator",
     "wikipedia",
     "convert_currency"
 ] as FunctionNames;
 
 const functionCalls: FunctionImpls = {
     wikipedia: ({ query }) => wikipedia(query, "en", false, true),
-    basic_calculator: ({ input }) => basicCalculator(input),
     convert_unit: async ({ amount_from, unit_from, unit_to }) => ({
         value: await convert(`${amount_from} ${unit_from} to ${unit_to}`, true)
     }),
@@ -189,8 +150,10 @@ const functionCalls: FunctionImpls = {
         res.results.length = Math.min(res.results.length, 15);
 
         const usefulProps = ["siteTitle", "title", "url", "description"];
-        return { comment: res.comment, results: res.results.map(r =>
-            Object.fromEntries(Object.entries(r).filter(([k]) => usefulProps.includes(k)))) };
+        return {
+            comment: res.comment, results: res.results.map(r =>
+                Object.fromEntries(Object.entries(r).filter(([k]) => usefulProps.includes(k))))
+        };
     },
     wolframalpha: async ({ query }) => await wolframalpha(query)
 };
@@ -228,7 +191,7 @@ export async function prompt(
         model = "gemini-2.5-flash",
         imageGeneration = false,
         history = [],
-        reasoningBudget = 0
+        reasoning = false
     } = options;
 
     const messages = [...history];
@@ -273,7 +236,10 @@ export async function prompt(
         };
     }
     if (model.startsWith("gemini-2.5")) body.generationConfig.thinkingConfig = {
-        thinkingBudget: reasoningBudget
+        thinkingBudget: reasoning ? 1024 : 0
+    };
+    else if (model.startsWith("gemini-3")) body.generationConfig.thinkingConfig = {
+        thinkingLevel: reasoning ? "low" : "minimal"
     };
 
     const fns = functionDefs.filter(fn => {
@@ -291,10 +257,10 @@ export async function prompt(
         };
     }
 
-    return await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent\
-?key=${process.env.GEMINI_API_KEY}`, {
+    return await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: "POST",
         headers: {
+            "x-goog-api-key": process.env.GEMINI_API_KEY,
             "Content-Type": "application/json"
         },
         body: JSON.stringify(body)

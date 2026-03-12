@@ -17,14 +17,14 @@ client.on("messageCreate", async msg => {
     msg.channel.sendTyping();
 
     const tools = [] as PromptFunctions;
-    tools.push("basic_calculator", "convert_currency", "convert_unit", "wikipedia", "search");
+    tools.push("convert_currency", "convert_unit", "wikipedia", "search");
     if (process.env.WOLFRAMALPHA_API_KEY) tools.push("wolframalpha");
 
     const response =
         await prompt(msg.content, msg.attachments.toArray(), tools, {
             model: "gemini-2.5-flash-preview-09-2025",
             history: historyItem.history,
-            reasoningBudget: 160
+            reasoning: true
         });
 
     const res = geminiResponse(response);
