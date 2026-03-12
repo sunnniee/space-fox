@@ -1,7 +1,7 @@
 import { ComponentTypes, MessageFlags } from "oceanic.js";
 import type { CreateMessageOptions, MessageComponent } from "oceanic.js";
 
-import type { InlineData, PromptHistoryItem, PromptHistoryItemModelParts, PromptOptions, PromptResult } from "../types.ts";
+import type { InlineData, PromptHistoryItem, PromptHistoryItemModelParts, PromptHistoryItemUserParts, PromptOptions, PromptResult } from "../types.ts";
 import { convert } from "./convert.ts";
 import { wikipedia } from "./wikipedia.ts";
 import { search } from "./search.ts";
@@ -289,6 +289,8 @@ export async function prompt(
                     sequentialCalls.push(part);
             }
 
+            const responseParts = new Map<PromptHistoryItemModelParts, PromptHistoryItemUserParts>();
+
             if (concurrentCalls.length > 0) {
                 const promises = concurrentCalls.map(part => {
                     const call = part.functionCall;
@@ -302,8 +304,10 @@ export async function prompt(
                     const part = concurrentCalls[i]!;
                     const result = results[i];
                     const fnName = part.functionCall!.name;
-                    messages.push({ role: "model", parts: [part] });
-                    messages.push({ role: "user", parts: [{ functionResponse: { name: fnName, response: result } }] });
+                    responseParts.set(
+                        part,
+                        { functionResponse: { name: fnName, response: result } }
+                    );
                 }
             }
 
@@ -313,10 +317,15 @@ export async function prompt(
                 if (fn) {
                     const res = await functionCalls[fn.name](call.args);
                     messages.push({ role: "model", parts: [part] });
-                    messages.push({ role: "user", parts: [{ functionResponse: { name: fn.name, response: res } }] });
+                    responseParts.set(
+                        part,
+                        { functionResponse: { name: fn.name, response: res } }
+                    );
                 }
             }
 
+            messages.push({ role: "model", parts: [...responseParts.keys()] });
+            messages.push({ role: "user", parts: [...responseParts.values()] });
             return prompt("", [], functions, { ...options, history: messages });
         }
 
