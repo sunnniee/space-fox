@@ -205,7 +205,7 @@ registerCommand({
                     flags
                 }).then(res => {
                     if (output.afterSend) res.getMessage().then(output.afterSend);
-                }).catch(e => handleError(ctx, e, ephemeralFlag));
+                }).catch(e => handleError(ctx, e, flags));
 
                 delete bangInputs[ctx.user.id];
             }).catch(e => handleError(ctx, e, ephemeralFlag));

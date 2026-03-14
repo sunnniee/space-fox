@@ -1,5 +1,5 @@
 import { inspect } from "util";
-import { ApplicationCommandOptionTypes, ApplicationCommandTypes, ApplicationIntegrationTypes, InteractionContextTypes } from "oceanic.js";
+import { ApplicationCommandOptionTypes, ApplicationCommandTypes, ApplicationIntegrationTypes, ComponentTypes, InteractionContextTypes, MessageFlags } from "oceanic.js";
 import type {
     ApplicationCommandOptionsWithOptions, ApplicationCommandOptionsWithValue,
     ModalComponent,
@@ -129,10 +129,19 @@ export function registerCommand<
 
 export function handleError(ctx: CommandInteraction | ModalSubmitInteraction | ComponentInteraction,
     e: any,
-    ephemeralFlag?: number) {
+    flags?: number) {
     if (!process.env.SUPPRESS_WARNINGS) console.log(inspect(e, { depth: 7, colors: true }));
-    ctx.reply({
-        content: "Something went wrong while running that, oop",
-        flags: ephemeralFlag || 0
-    }).catch(() => { });
+    if (flags && (flags & MessageFlags.IS_COMPONENTS_V2))
+        ctx.reply({
+            components: [{
+                type: ComponentTypes.TEXT_DISPLAY,
+                content: "Something went wrong while running that, oop"
+            }],
+            flags
+        }).catch(() => { });
+    else
+        ctx.reply({
+            content: "Something went wrong while running that, oop",
+            flags: flags || 0
+        }).catch(() => { });
 }
