@@ -316,7 +316,6 @@ export async function prompt(
                 const fn = functionDefs.find(f => f.name === call.name);
                 if (fn) {
                     const res = await functionCalls[fn.name](call.args);
-                    messages.push({ role: "model", parts: [part] });
                     responseParts.set(
                         part,
                         { functionResponse: { name: fn.name, response: res } }

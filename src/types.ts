@@ -9,7 +9,8 @@ import type { Attachment, CommandInteraction, Message, Role, User, AnyInteractio
     CreateMessageOptions,
     ModalComponent,
     ModalSubmitInteraction,
-    Uncached } from "oceanic.js";
+    Uncached,
+    EditMessageOptions } from "oceanic.js";
 import type { PermissionTier } from "./permissions.ts";
 import type { prompt } from "./utils/gemini.ts";
 
@@ -20,8 +21,12 @@ export interface BangResult {
     afterSend?: (msg: Message<AnyInteractionChannel | Uncached>) => any;
 }
 
-export type Context = Message<AnyInteractionChannel | Uncached>
-    | (CommandInteraction<AnyInteractionChannel | Uncached> & { author: User });
+export type Context = (
+    Message<AnyInteractionChannel | Uncached>
+    | (CommandInteraction<AnyInteractionChannel | Uncached> & { author: User })
+) & {
+    editSelf: (content: EditMessageOptions) => Promise<Message<AnyInteractionChannel | Uncached>>;
+};
 
 export enum ComponentHandlerTypes {
     MODAL,

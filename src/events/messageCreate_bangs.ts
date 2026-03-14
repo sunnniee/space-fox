@@ -3,6 +3,7 @@ import type { AnyTextableChannel, Message, } from "oceanic.js";
 import { client, inCachedChannel } from "../client.ts";
 import { bangInputs, bangRegex, bangs } from "../globals.ts";
 import { formatAndAddLinkButton, canUseBang } from "../utils/bangs.ts";
+import type { Context } from "../types.ts";
 
 function handleError(msg: Message, e: any) {
     if (!process.env.SUPPRESS_WARNINGS) console.log(e);
@@ -49,7 +50,9 @@ client.on("messageCreate", async msg => {
         else {
             if (!bang.shortExecute) client.sendTyping(msg.channelID);
 
-            bang.execute(content, attachments, ctx, parameter).then(output => {
+            bang.execute(content, attachments,
+                Object.assign(ctx, { editSelf: ctx.edit }) satisfies Context,
+                parameter).then(output => {
                 if (!output || !output.content) return;
                 const response = output.content, { link } = output;
                 client.respond(msg, formatAndAddLinkButton(response, bang.title, link))

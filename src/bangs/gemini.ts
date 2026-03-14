@@ -1,8 +1,32 @@
+import { ComponentTypes, MessageFlags } from "oceanic.js";
+import type { AnyInteractionChannel, Message, Uncached } from "oceanic.js";
 import { promptHistory } from "../globals.ts";
 import { geminiResponse, prompt } from "../utils/gemini.ts";
 import { getPermissionTier, PermissionTier } from "../permissions.ts";
 import { registerBang } from "../utils/bangs.ts";
-import type { PromptFunctions, PromptOptions } from "../types.js";
+import type { Context, PromptFunctions, PromptOptions, PromptResult } from "../types.js";
+
+async function respondWithPrompt(
+    msg: Message<AnyInteractionChannel | Uncached>,
+    ctx: Context,
+    prompt: Promise<PromptResult>,
+    withDebugInfo?: PromptOptions
+) {
+    const response = await prompt;
+
+    const textResponse = geminiResponse(response,
+        withDebugInfo || undefined,
+        withDebugInfo ? 3000 : 3900);
+    await ctx.editSelf({ ...textResponse, flags: msg.flags });
+
+    if (!response.history.length)
+        delete promptHistory[msg.id];
+    else promptHistory[msg.id] = {
+        userId: msg.author.id,
+        history: response.history,
+        at: Date.now()
+    };
+}
 
 registerBang({
     title: "Gemini",
@@ -65,22 +89,29 @@ If there were multiple search operatons done, specify which with {{src:n;1,2,3}}
             model, imageGeneration,
             reasoning: params.includes("r")
         };
-        const response = await prompt(content, attachments, tools, options);
+        const response = prompt(content, attachments, tools, options);
 
-        const res = geminiResponse(response,
-            params.includes("d") ? options : undefined,
-            params.includes("d") ? 3000 : 3900);
         return {
-            content: res,
-            afterSend: msg => {
-                if (!response.history.length)
-                    delete promptHistory[msg.id];
-                else promptHistory[msg.id] = {
-                    userId: ctx.author.id,
-                    history: response.history,
-                    at: Date.now()
-                };
-            }
+            content: {
+                components: [{
+                    type: ComponentTypes.CONTAINER,
+                    accentColor: 0x076EFF,
+                    components: [{
+                        type: ComponentTypes.MEDIA_GALLERY,
+                        items: [{ media: { url: "https://bignutty.gitlab.io/webstorage4/v2/assets/loading/05_chat_loading.7y2ji893rho0.gif" } }]
+                    }, {
+                        type: ComponentTypes.TEXT_DISPLAY,
+                        content: "-# AI-generated response. Gemini makes mistakes, so double-check it."
+                    }]
+                }],
+                flags: MessageFlags.IS_COMPONENTS_V2
+            },
+            afterSend: msg => respondWithPrompt(
+                msg,
+                ctx,
+                response,
+                params.includes("d") ? options : undefined
+            )
         };
     }
 });

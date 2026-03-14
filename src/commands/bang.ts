@@ -1,10 +1,9 @@
-import type { Context } from "vm";
 import { ApplicationCommandOptionTypes, ApplicationCommandTypes, MessageFlags } from "oceanic.js";
 import type { AutocompleteChoice } from "oceanic.js";
 import { handleError, registerCommand } from "../utils/commands.ts";
 import { bangRegex, bangs, bangInputs } from "../globals.ts";
 import { bangsByTitle, canUseBang, formatAndAddLinkButton, getBangExamples } from "../utils/bangs.ts";
-import type { Bang, NonEmptyArray } from "../types.ts";
+import type { Bang, NonEmptyArray, Context } from "../types.ts";
 
 const errorMsg = "Couldn't find that bang or no bang specified";
 const bangAtStartRegex = /^!([\w-]+)\s?(.*)/si;
@@ -164,7 +163,9 @@ registerCommand({
             return ctx.reply({ content: errorMsg, flags: MessageFlags.EPHEMERAL });
 
         const input = bangInputs[ctx.user.id];
-        const context = input?.message || Object.assign(ctx, { author: ctx.user }) satisfies Context;
+        const context = Object.assign(input?.message || Object.assign(ctx, { author: ctx.user }), {
+            editSelf: ctx.editOriginal
+        }) satisfies Context;
         const attachments = input ? input.message.attachments.toArray() : [];
 
         const [, origContent, bangUsed] = matchOutput;
