@@ -1,3 +1,4 @@
+import { inspect } from "util";
 import { ApplicationCommandOptionTypes, ApplicationCommandTypes, ApplicationIntegrationTypes, InteractionContextTypes } from "oceanic.js";
 import type {
     ApplicationCommandOptionsWithOptions, ApplicationCommandOptionsWithValue,
@@ -129,15 +130,9 @@ export function registerCommand<
 export function handleError(ctx: CommandInteraction | ModalSubmitInteraction | ComponentInteraction,
     e: any,
     ephemeralFlag?: number) {
-    if (!process.env.SUPPRESS_WARNINGS) console.log(e);
-    let error = "Unknown error";
-    try {
-        error = e.toString()
-            .replace(/https?:\/\/[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()!@:%_+.~#?&//=]*)/g, "[link]")
-            .replace(/\/webhooks\/\d+\/\w+/g, "/[redacted]");
-    } catch { }
+    if (!process.env.SUPPRESS_WARNINGS) console.log(inspect(e, { depth: 7, colors: true }));
     ctx.reply({
-        content: `Something went wrong while running that, oop\n\`\`\`${error}\`\`\``,
+        content: "Something went wrong while running that, oop",
         flags: ephemeralFlag || 0
     }).catch(() => { });
 }

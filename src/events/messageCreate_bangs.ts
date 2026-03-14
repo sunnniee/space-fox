@@ -1,3 +1,4 @@
+import { inspect } from "util";
 import type { AnyTextableChannel, Message, } from "oceanic.js";
 
 import { client, inCachedChannel } from "../client.ts";
@@ -6,14 +7,9 @@ import { formatAndAddLinkButton, canUseBang } from "../utils/bangs.ts";
 import type { Context } from "../types.ts";
 
 function handleError(msg: Message, e: any) {
-    if (!process.env.SUPPRESS_WARNINGS) console.log(e);
-    let error = "Unknown error";
-    try {
-        error = e.toString().replace(/https?:\/\/[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()!@:%_+.~#?&//=]*)/g,
-            "[link]");
-    } catch { }
+    if (!process.env.SUPPRESS_WARNINGS) console.log(inspect(e, { depth: 7, colors: true }));
     client.respond(msg, {
-        content: `Something went wrong while running that, oop\n\`\`\`${error}\`\`\``
+        content: "Something went wrong while running that, oop"
     }).catch(() => { });
 }
 

@@ -1,3 +1,4 @@
+import { inspect } from "util";
 import { ComponentTypes, MessageFlags } from "oceanic.js";
 import type { CreateMessageOptions, MessageComponent } from "oceanic.js";
 
@@ -169,15 +170,13 @@ export async function attachmentUrlToImageInput(url: string): Promise<InlineData
 }
 
 function errorMessage(e: any) {
-    if (!process.env.SUPPRESS_WARNINGS) console.log(e);
     if (!e) return "Unknown error";
     if (e.promptFeedback?.blockReason)
         return "Message blocked for " + e.promptFeedback.blockReason;
     else if (e.candidates && e.candidates?.[0]?.finishReason !== "STOP")
         return "Message generation failed for " + e.candidates[0].finishReason;
-    else if (e.error?.message)
-        return e.error.message;
 
+    if (!process.env.SUPPRESS_WARNINGS) console.log(inspect(e, { depth: 7, colors: true }));
     return "Unknown error";
 }
 
