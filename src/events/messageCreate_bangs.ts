@@ -1,16 +1,26 @@
 import { inspect } from "util";
-import type { AnyTextableChannel, Message, } from "oceanic.js";
+import { ComponentTypes, MessageFlags } from "oceanic.js";
+import type { AnyTextableChannel, Message } from "oceanic.js";
 
 import { client, inCachedChannel } from "../client.ts";
 import { bangInputs, bangRegex, bangs } from "../globals.ts";
 import { formatAndAddLinkButton, canUseBang } from "../utils/bangs.ts";
 import type { Context } from "../types.ts";
 
-function handleError(msg: Message, e: any) {
+function handleError(msg: Message, e: any, flags?: number) {
     if (!process.env.SUPPRESS_WARNINGS) console.log(inspect(e, { depth: 7, colors: true }));
-    client.respond(msg, {
-        content: "Something went wrong while running that, oop"
-    }).catch(() => { });
+    if (flags && (flags & MessageFlags.IS_COMPONENTS_V2))
+        client.respond(msg, {
+            components: [{
+                type: ComponentTypes.TEXT_DISPLAY,
+                content: "Something went wrong while running that, oop"
+            }],
+            flags
+        }).catch(() => { });
+    else
+        client.respond(msg, {
+            content: "Something went wrong while running that, oop"
+        }).catch(() => { });
 }
 
 client.on("messageCreate", async msg => {
@@ -51,11 +61,12 @@ client.on("messageCreate", async msg => {
                 parameter).then(output => {
                 if (!output || !output.content) return;
                 const response = output.content, { link } = output;
-                client.respond(msg, formatAndAddLinkButton(response, bang.title, link))
+                const msgContent = formatAndAddLinkButton(response, bang.title, link);
+                client.respond(msg, msgContent)
                     .then(msg => {
                         if (msg && output.afterSend) output.afterSend(msg);
                     })
-                    .catch(e => handleError(msg, e));
+                    .catch(e => handleError(msg, e, msgContent.flags));
 
                 delete bangInputs[msg.author.id];
             }).catch(e => handleError(msg, e));
